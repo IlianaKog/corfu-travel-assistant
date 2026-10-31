@@ -256,7 +256,7 @@ def test_tool_schema_steers_topics_to_interests():
 def test_weather_tools_steer_away_from_a_redundant_forecast_call():
     specs = {t["function"]["name"]: t["function"]["description"] for t in openai_tool_specs()}
     assert "do not call get_weather first" in specs["adapt_plan_to_weather"]
-    assert "use adapt_plan_to_weather alone" in specs["get_weather"]
+    assert "which adapt_plan_to_weather does alone" in specs["get_weather"]
 
 
 def test_revise_keeps_stops_and_persists_exclusions(deps):
@@ -298,6 +298,15 @@ def test_weather_adaptation_uses_injected_fixture(deps):
     assert out.data["weather"]["rain_windows"] == ["2026-10-07 15:00-17:00"]
     assert out.data["status"] == "ok" and out.data["validation"]["ok"]
     assert out.data["itinerary"]["window"] == "13:00-17:00"
+
+
+def test_adaptation_gives_the_model_the_same_weather_facts_as_get_weather(deps):
+    s = SessionState(weather_fixture=str(RAIN_FIXTURE_PATH))
+    call(s, deps, "plan_itinerary", date="2026-10-07", start_time="13:00", end_time="17:00", interests=["history"], settings=["outdoor"])
+    adapted = call(s, deps, "adapt_plan_to_weather").data["weather"]
+    asked = call(s, deps, "get_weather", date="2026-10-07", start_time="13:00", end_time="17:00").data
+    assert adapted == asked  # one adapt call is enough: same summary, source URL and guidance
+    assert "precipitation probability" in adapted["guidance"] and "request_url" in adapted
 
 
 def test_weather_unavailable_keeps_plan(deps):

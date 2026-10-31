@@ -351,12 +351,23 @@ def _start_time_check(c: PlanConstraints) -> dict:
     return out
 
 
+WEATHER_GUIDANCE = "State the source (live Open-Meteo or synthetic fixture) and the precipitation probability."
+
+
+def forecast_facts(report, start, end) -> dict:
+    """The forecast as every weather-reading tool returns it, so the model gets the same facts and guidance from each."""
+    data = summarize(report, start, end)
+    data["request_url"] = report.request_url
+    data["guidance"] = WEATHER_GUIDANCE
+    return data
+
+
 def _rain_for(deps: Deps, state: SessionState, c: PlanConstraints) -> tuple[list, dict]:
     try:
         provider = deps.weather_factory(state.weather_fixture)
         start, end = local_dt(c.date, c.start), local_dt(c.date, c.end)
         report = provider.forecast(start, end)
-        return report.rain_windows(), {"weather": summarize(report, start, end)}
+        return report.rain_windows(), {"weather": forecast_facts(report, start, end)}
     except WeatherUnavailable as e:
         return [], {"weather": {"unavailable": str(e)}}
 
@@ -443,10 +454,7 @@ def get_weather(state: SessionState, args: WeatherArgs, deps: Deps) -> ToolOutpu
         report = deps.weather_factory(state.weather_fixture).forecast(start, end)
     except WeatherUnavailable as e:
         return ToolOutput({"unavailable": str(e), "guidance": "Tell the visitor no forecast is available; do not guess."})
-    data = summarize(report, start, end)
-    data["request_url"] = report.request_url
-    data["guidance"] = "State the source (live Open-Meteo or synthetic fixture) and the precipitation probability; a forecast is not a certainty."
-    return ToolOutput(data, weather_source=report.source)
+    return ToolOutput(forecast_facts(report, start, end), weather_source=report.source)
 
 
 def plan_itinerary(state: SessionState, args: PlanArgs, deps: Deps) -> ToolOutput:
@@ -530,7 +538,7 @@ def adapt_plan_to_weather(state: SessionState, args: AdaptWeatherArgs, deps: Dep
     except WeatherUnavailable as e:
         return ToolOutput({"status": "weather_unavailable", "reason": str(e), "itinerary": _itinerary_json(state.itinerary),
                            "guidance": "Say the forecast is unavailable; keep the plan; do not guess the weather."})
-    weather = summarize(report, state.itinerary.window_start, state.itinerary.window_end)
+    weather = forecast_facts(report, state.itinerary.window_start, state.itinerary.window_end)
     result = planner.adapt_to_weather(state.itinerary, c, deps.repo, scores_for(deps, ranking_terms(c)), report.rain_windows())
     out = _plan_output(state, result, {"weather": weather})
     out.weather_source = report.source
@@ -552,7 +560,7 @@ TOOLS = [
     Tool("get_place_details", "Look up specific places by name or id: fixture opening hours, setting, duration, family flag, description.", DetailsArgs, get_place_details),
     Tool("recommend_places", "Rank places for the visitor's interests and constraints using structured filters (no itinerary).", RecommendArgs, recommend_places),
     Tool("get_weather", "Weather forecast for Corfu: a date and time window, or the next N hours from now. "
-         "For weather questions without a plan; to adapt an existing itinerary use adapt_plan_to_weather alone.", WeatherArgs, get_weather),
+         "For any weather question except adapting an existing itinerary, which adapt_plan_to_weather does alone.", WeatherArgs, get_weather),
     Tool("plan_itinerary", "Create a new validated walking itinerary, or check whether named places fit a time window.", PlanArgs, plan_itinerary),
     Tool("replace_stop", "Replace one stop of the current itinerary, keeping the other stops and the time window.", ReplaceArgs, replace_stop),
     Tool("revise_itinerary", "Change constraints of the current itinerary (time window, exclusions, child, interests, remove places), keeping stops that still fit.", ReviseArgs, revise_itinerary),
