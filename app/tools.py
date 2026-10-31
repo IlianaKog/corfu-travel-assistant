@@ -13,7 +13,7 @@ from datetime import date, datetime, time, timedelta
 import re
 from typing import Annotated, Any
 
-from pydantic import BaseModel, BeforeValidator, Field, ValidationError
+from pydantic import BaseModel, BeforeValidator, Field, ValidationError, WithJsonSchema
 
 from app import planner
 from app.data import POIRepository, get_repository
@@ -108,7 +108,9 @@ def _tidy_time(value):
     return v
 
 
-LenientTime = Annotated[time, BeforeValidator(_tidy_time)]
+# Advertised as a plain string: JSON Schema "format": "time" means HH:MM:SS, and
+# providers that check arguments against the schema (Groq) rejected "13:00".
+LenientTime = Annotated[time, BeforeValidator(_tidy_time), WithJsonSchema({"type": "string"})]
 
 
 class SearchArgs(BaseModel):
@@ -152,9 +154,13 @@ class PlanArgs(BaseModel):
     settings: list[Setting] | None = Field(default=None, description="Allowed settings, e.g. ['outdoor'].")
     with_child: bool | None = None
     child_age: int | None = Field(default=None, ge=0, le=17)
-    must_include_places: list[str] | None = Field(default=None, description="Specific places the visitor named; triggers a feasibility check.")
-    max_stops: int | None = Field(default=None, ge=1, le=8, description="Number of stops the visitor asked for, e.g. 5 for 'five museums'. Applies to this request only.")
-    consider_weather: bool = Field(default=False, description="Fetch the forecast and avoid outdoor stops during rain.")
+    must_include_places: list[str] | None = Field(default=None, description=(
+        "Only places the visitor named explicitly, in their words; triggers a feasibility check of just those places. "
+        "Leave empty for topics such as 'fortresses' or 'museums', and never add places yourself."))
+    max_stops: int | None = Field(default=None, ge=1, le=8, description=(
+        "Number of stops the visitor asked for, e.g. 5 for 'five museums'. Leave empty unless the visitor gave a number. "
+        "Applies to this request only."))
+    consider_weather: bool = Field(default=False, description="Fetch the forecast and avoid outdoor stops during rain. Only when the visitor mentions weather or rain.")
     fresh_start: bool = Field(default=False, description="True only if the visitor asks for a new plan with different preferences; clears earlier preferences.")
 
 
@@ -332,6 +338,42 @@ def _with_time_notices(out: ToolOutput, state: SessionState, c: PlanConstraints)
     return out
 
 
+# Words too common in place names to identify one ("Old Fortress" needs both words).
+_GENERIC_NAME_WORDS = {"the", "and", "of", "corfu", "old", "new", "town", "fortress", "museum", "church", "square", "gate",
+                       "palace", "garden", "park", "hall", "quarter", "market", "art", "saint", "st", "restaurant", "grove"}
+
+
+def _mentions(phrase: str, text: str) -> bool:
+    return bool(re.search(rf"\b{re.escape(phrase.lower())}s?\b", text))
+
+
+def _named_by_visitor(arg: str, poi: POI, text: str) -> bool:
+    """Did the visitor name this place? The phrase the model passed, the full
+    name, or a distinctive word of it ("the Liston") must appear in their messages."""
+    distinctive = [w for w in re.findall(r"[a-z']+", poi.name.lower()) if len(w) > 3 and w not in _GENERIC_NAME_WORDS]
+    return _mentions(arg, text) or _mentions(poi.name, text) or any(_mentions(w, text) for w in distinctive)
+
+
+def _unrequested(state: SessionState, found: list[POI], args: list[str], max_stops: int | None) -> tuple[list[POI], int | None, list[str]]:
+    """Drop named places and a stop count the visitor never gave. Seen live
+    (gpt-oss-120b): for "Venetian history and fortresses" the model sent
+    must_include_places=[Old Fortress, New Fortress] and max_stops=3, which
+    turned a topic request into a two-stop feasibility check."""
+    text = _user_text(state)
+    if not text:  # tools called directly (tests, scripts): no conversation to check
+        return found, max_stops, []
+    notes, kept = [], []
+    for arg, poi in zip(args, found):
+        if _named_by_visitor(arg, poi, text):
+            kept.append(poi)
+        else:
+            notes.append(f"{poi.name} was not named by the visitor, so it is not treated as a required place.")
+    if max_stops and not any(_mentions(w, text) for w in filter(None, (str(max_stops), _NUMBER_WORDS.get(max_stops)))):
+        notes.append(f"The visitor gave no number of stops, so max_stops={max_stops} was ignored.")
+        max_stops = None
+    return kept, max_stops, notes
+
+
 PAST_START_TOLERANCE = timedelta(minutes=5)
 
 
@@ -485,25 +527,28 @@ def plan_itinerary(state: SessionState, args: PlanArgs, deps: Deps) -> ToolOutpu
     prefs.exclude_tags = _union(prefs.exclude_tags, args.exclude_tags)
     prefs.exclude_categories = _union(prefs.exclude_categories, args.exclude_categories)
 
-    required: list[str] = []
+    found: list[POI] = []
     if args.must_include_places:
         found, problems = _resolve(deps.repo, args.must_include_places)
         if problems:
             return ToolOutput({"status": "needs_clarification", "unresolved": problems,
                                "guidance": "Tell the visitor which names are not in the dataset (or are ambiguous). Do not substitute or invent places."})
-        required = [p.id for p in found]
+    found, max_stops, ignored = _unrequested(state, found, args.must_include_places or [], args.max_stops)
+    required = [p.id for p in found]
     # a new plan replaces the named places; naming a place again lifts an earlier exclusion of it
     prefs.named_places = required
     prefs.excluded_poi_ids = [i for i in prefs.excluded_poi_ids if i not in required]
 
     try:
-        c = prefs.to_constraints(required_poi_ids=required or None, max_stops=args.max_stops)
+        c = prefs.to_constraints(required_poi_ids=required or None, max_stops=max_stops)
     except ValueError as err:
         return ToolOutput({"error": str(err)})
     state.preferences = prefs
 
     c, rain, extra = _with_weather(deps, state, c)
     extra.update(_start_time_check(c))
+    if ignored:
+        extra["ignored_arguments"] = ignored
     result = planner.plan(c, deps.repo, scores_for(deps, ranking_terms(c)), rain)
     out = _weather_output(_plan_output(state, result, extra), extra)
     return _with_time_notices(out, state, c)
@@ -621,7 +666,7 @@ def clean_schema(schema: dict) -> dict:
                 return walk(defs[node["$ref"].split("/")[-1]])
             if "anyOf" in node:
                 options = [o for o in node["anyOf"] if o.get("type") != "null"]
-                merged = {**walk(options[0]), **{k: v for k, v in node.items() if k not in ("anyOf", "default")}} if len(options) == 1 else {"anyOf": [walk(o) for o in options]}
+                merged = {**walk(options[0]), **{k: v for k, v in node.items() if k not in ("anyOf", "default", "title")}} if len(options) == 1 else {"anyOf": [walk(o) for o in options]}
                 return merged
             return {k: walk(v) for k, v in node.items() if k not in ("$defs", "title", "default")}
         if isinstance(node, list):
