@@ -255,11 +255,12 @@ def _add_minutes(t: time, minutes: int) -> time:
     return (datetime.combine(date.min, t) + timedelta(minutes=minutes)).time()
 
 
-def _window(args_date, start, end, duration, prefs: Preferences) -> tuple[date | None, time | None, time | None]:
+def _window(args_date, start, end, duration, prefs: Preferences, text: str = "") -> tuple[date | None, time | None, time | None]:
     """Resolve date/start/end from arguments, falling back to the session.
     A duration is converted to an end time in code, not by the LLM. Moving only
-    the start keeps the window's length ("from 16:00" after a one-hour plan
-    means 16:00-17:00), so the end is never left behind or invented."""
+    the start keeps what the visitor fixed: a stated duration keeps the window's
+    length ("from 16:00" after "one hour" means 16:00-17:00), a stated end time
+    stays ("free 10:00-13:30", then "start at 10:30" means 10:30-13:30)."""
     d = args_date or prefs.date
     s = start or prefs.start
     if end:
@@ -268,7 +269,8 @@ def _window(args_date, start, end, duration, prefs: Preferences) -> tuple[date |
         e = _add_minutes(s, duration)
     elif start and prefs.start and prefs.end and start != prefs.start:
         length = (datetime.combine(date.min, prefs.end) - datetime.combine(date.min, prefs.start)).seconds // 60
-        e = _add_minutes(start, length)
+        end_was_stated = _time_stated(prefs.end, text) and not _duration_stated(length, text)
+        e = prefs.end if end_was_stated and start < prefs.end else _add_minutes(start, length)
     else:
         e = prefs.end
     return d, s, e
@@ -521,7 +523,7 @@ def get_weather(state: SessionState, args: WeatherArgs, deps: Deps) -> ToolOutpu
 
 def plan_itinerary(state: SessionState, args: PlanArgs, deps: Deps) -> ToolOutput:
     base = Preferences() if args.fresh_start else state.preferences
-    d, s, e = _window(args.date, args.start_time, args.end_time, args.duration_minutes, base)
+    d, s, e = _window(args.date, args.start_time, args.end_time, args.duration_minutes, base, _user_text(state))
     prefs = base.merged(date=d, start=s, end=e, interests=args.interests, categories=args.categories, settings=args.settings,
                         with_child=args.with_child, child_age=args.child_age, consider_weather=args.consider_weather or None)
     prefs.exclude_tags = _union(prefs.exclude_tags, args.exclude_tags)
@@ -579,7 +581,7 @@ def replace_stop(state: SessionState, args: ReplaceArgs, deps: Deps) -> ToolOutp
 def revise_itinerary(state: SessionState, args: ReviseArgs, deps: Deps) -> ToolOutput:
     if state.itinerary is None:
         return ToolOutput({"error": "There is no itinerary yet. Create one with plan_itinerary first."})
-    d, s, e = _window(args.date, args.start_time, args.end_time, None, state.preferences)
+    d, s, e = _window(args.date, args.start_time, args.end_time, None, state.preferences, _user_text(state))
     prefs = state.preferences.merged(date=d, start=s, end=e, interests=args.interests,
                                      categories=args.categories, settings=args.settings, with_child=args.with_child,
                                      child_age=args.child_age)

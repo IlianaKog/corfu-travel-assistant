@@ -278,6 +278,18 @@ def test_moving_only_the_start_keeps_the_duration(deps):
     assert out.notices == []  # 16:00 was said, and "one hour" covers the end
 
 
+def test_moving_only_the_start_keeps_a_stated_end_time(deps):
+    """Seen live: after "free 10:00-13:30", "start at 10:30" became 10:30-14:00."""
+    s = said("We're free 10:00-13:30 on Thursday 8 October 2026. Can we walk to the Liston, the Old Fortress and Town Hall Square in that time?",
+             "My 6-year-old son is coming too.", "Let's start at 10:30 instead.")
+    call(s, deps, "plan_itinerary", date="2026-10-08", start_time="10:00", end_time="13:30",
+         must_include_places=["Liston", "Old Fortress", "Town Hall Square"])
+    call(s, deps, "revise_itinerary", with_child=True, child_age=6)
+    out = call(s, deps, "revise_itinerary", start_time="10:30")
+    assert out.data["itinerary"]["window"] == "10:30-13:30" and out.notices == []
+    assert {"CF-032", "CF-016"} <= set(s.itinerary.poi_ids())
+
+
 def test_tool_schema_steers_topics_to_interests():
     plan = next(t for t in openai_tool_specs() if t["function"]["name"] == "plan_itinerary")["function"]["parameters"]["properties"]
     assert "Museums and galleries are not a category" in plan["interests"]["description"]
