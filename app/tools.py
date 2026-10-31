@@ -372,6 +372,26 @@ def _rain_for(deps: Deps, state: SessionState, c: PlanConstraints) -> tuple[list
         return [], {"weather": {"unavailable": str(e)}}
 
 
+def _with_weather(deps: Deps, state: SessionState, c: PlanConstraints) -> tuple[PlanConstraints, list, dict]:
+    """Rain windows for planner and validator once the plan has been checked
+    against the weather. Seen in testing: after adapt_plan_to_weather, adding a
+    child re-planned without the forecast and put outdoor stops back into the
+    rain. As in the adaptation, indoor places are allowed when rain is forecast."""
+    if not state.preferences.consider_weather:
+        return c, [], {}
+    rain, extra = _rain_for(deps, state, c)
+    if rain and c.settings and Setting.INDOOR not in c.settings:
+        c = c.model_copy(update={"settings": sorted({*c.settings, Setting.INDOOR}, key=lambda s: s.value)})
+        extra["weather_note"] = "Indoor places are allowed for the rainy hours, relaxing the outdoor preference."
+    return c, rain, extra
+
+
+def _weather_output(out: ToolOutput, extra: dict) -> ToolOutput:
+    if source := extra.get("weather", {}).get("source"):
+        out.weather_source = source
+    return out
+
+
 # --- tools ---------------------------------------------------------------------------
 
 def search_places_info(state: SessionState, args: SearchArgs, deps: Deps) -> ToolOutput:
@@ -461,7 +481,7 @@ def plan_itinerary(state: SessionState, args: PlanArgs, deps: Deps) -> ToolOutpu
     base = Preferences() if args.fresh_start else state.preferences
     d, s, e = _window(args.date, args.start_time, args.end_time, args.duration_minutes, base)
     prefs = base.merged(date=d, start=s, end=e, interests=args.interests, categories=args.categories, settings=args.settings,
-                        with_child=args.with_child, child_age=args.child_age)
+                        with_child=args.with_child, child_age=args.child_age, consider_weather=args.consider_weather or None)
     prefs.exclude_tags = _union(prefs.exclude_tags, args.exclude_tags)
     prefs.exclude_categories = _union(prefs.exclude_categories, args.exclude_categories)
 
@@ -479,12 +499,10 @@ def plan_itinerary(state: SessionState, args: PlanArgs, deps: Deps) -> ToolOutpu
         return ToolOutput({"error": str(err)})
     state.preferences = prefs
 
-    rain, extra = _rain_for(deps, state, c) if args.consider_weather else ([], {})
+    c, rain, extra = _with_weather(deps, state, c)
     extra.update(_start_time_check(c))
     result = planner.plan(c, deps.repo, scores_for(deps, ranking_terms(c)), rain)
-    out = _plan_output(state, result, extra)
-    if extra.get("weather", {}).get("source"):
-        out.weather_source = extra["weather"]["source"]
+    out = _weather_output(_plan_output(state, result, extra), extra)
     return _with_time_notices(out, state, c)
 
 
@@ -499,8 +517,10 @@ def replace_stop(state: SessionState, args: ReplaceArgs, deps: Deps) -> ToolOutp
         c = prefs.to_constraints(interests=args.interests, settings=args.settings, categories=args.categories)
     except ValueError as err:
         return ToolOutput({"error": str(err)})
+    c, rain, extra = _with_weather(deps, state, c)
     scores = scores_for(deps, ranking_terms(c))
-    return _plan_output(state, planner.replace_stop(state.itinerary, args.stop_number - 1, c, deps.repo, scores))
+    result = planner.replace_stop(state.itinerary, args.stop_number - 1, c, deps.repo, scores, rain)
+    return _weather_output(_plan_output(state, result, extra), extra)
 
 
 def revise_itinerary(state: SessionState, args: ReviseArgs, deps: Deps) -> ToolOutput:
@@ -522,8 +542,9 @@ def revise_itinerary(state: SessionState, args: ReviseArgs, deps: Deps) -> ToolO
     except ValueError as err:
         return ToolOutput({"error": str(err)})
     state.preferences = prefs
-    result = planner.replan_preserving(state.itinerary, c, deps.repo, scores_for(deps, ranking_terms(c)))
-    return _with_time_notices(_plan_output(state, result), state, c)
+    c, rain, extra = _with_weather(deps, state, c)
+    result = planner.replan_preserving(state.itinerary, c, deps.repo, scores_for(deps, ranking_terms(c)), rain)
+    return _with_time_notices(_weather_output(_plan_output(state, result, extra), extra), state, c)
 
 
 def adapt_plan_to_weather(state: SessionState, args: AdaptWeatherArgs, deps: Deps) -> ToolOutput:
@@ -539,6 +560,7 @@ def adapt_plan_to_weather(state: SessionState, args: AdaptWeatherArgs, deps: Dep
         return ToolOutput({"status": "weather_unavailable", "reason": str(e), "itinerary": _itinerary_json(state.itinerary),
                            "guidance": "Say the forecast is unavailable; keep the plan; do not guess the weather."})
     weather = forecast_facts(report, state.itinerary.window_start, state.itinerary.window_end)
+    state.preferences.consider_weather = True
     result = planner.adapt_to_weather(state.itinerary, c, deps.repo, scores_for(deps, ranking_terms(c)), report.rain_windows())
     out = _plan_output(state, result, {"weather": weather})
     out.weather_source = report.source

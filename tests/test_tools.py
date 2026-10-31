@@ -8,7 +8,7 @@ import pytest
 from app.config import RAIN_FIXTURE_PATH
 from app.state import SessionState
 from app.tools import Deps, openai_tool_specs, run_tool
-from app.weather import FixtureProvider, WeatherUnavailable
+from app.weather import FixtureProvider, WeatherUnavailable, load_fixture, overlaps
 
 
 class NoWeather:
@@ -307,6 +307,38 @@ def test_adaptation_gives_the_model_the_same_weather_facts_as_get_weather(deps):
     asked = call(s, deps, "get_weather", date="2026-10-07", start_time="13:00", end_time="17:00").data
     assert adapted == asked  # one adapt call is enough: same summary, source URL and guidance
     assert "precipitation probability" in adapted["guidance"] and "request_url" in adapted
+
+
+def _rain_exposed(itin):
+    rain = load_fixture().rain_windows()
+    return [s.name for s in itin.stops if s.setting.value != "indoor" and overlaps(rain, s.start, s.end)]
+
+
+@pytest.mark.parametrize("change, args", [
+    ("revise_itinerary", {"with_child": True, "child_age": 8}),
+    ("replace_stop", {"stop_number": 1, "with_child": True, "child_age": 8}),
+])
+def test_later_changes_keep_the_weather_adaptation(deps, change, args):
+    # Seen in testing: adding a child after adapt_plan_to_weather put outdoor stops back into the rain.
+    s = SessionState(weather_fixture=str(RAIN_FIXTURE_PATH))
+    call(s, deps, "plan_itinerary", date="2026-10-07", start_time="13:00", end_time="17:00", interests=["venetian history", "fortresses"])
+    call(s, deps, "adapt_plan_to_weather")
+    assert s.preferences.consider_weather and not _rain_exposed(s.itinerary)
+    out = call(s, deps, change, **args)
+    assert out.data["status"] == "ok" and out.data["validation"]["ok"]
+    assert out.weather_source == "synthetic_fixture"
+    assert not _rain_exposed(s.itinerary)
+    changed = s.itinerary.poi_ids()[:1] if change == "replace_stop" else s.itinerary.poi_ids()  # replace_stop keeps the other stops
+    assert all(deps.repo.get(i).family_suitability_fixture is True for i in changed)
+
+
+def test_indoor_stops_kept_by_the_rain_survive_an_outdoor_preference(deps):
+    s = SessionState(weather_fixture=str(RAIN_FIXTURE_PATH))
+    call(s, deps, "plan_itinerary", date="2026-10-07", start_time="13:00", end_time="17:00", interests=["history"], settings=["outdoor"])
+    call(s, deps, "adapt_plan_to_weather")
+    out = call(s, deps, "revise_itinerary", with_child=True)
+    assert not any("'indoor' not allowed" in n for n in out.data["notes"])
+    assert "indoor" in [st.setting.value for st in s.itinerary.stops] and not _rain_exposed(s.itinerary)
 
 
 def test_weather_unavailable_keeps_plan(deps):
