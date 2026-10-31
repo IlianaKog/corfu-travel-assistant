@@ -28,6 +28,7 @@ W_WAIT_MIN = 0.10
 W_KEEP = 4.0
 W_NAMED = 30.0  # a place the visitor named outweighs any unrequested stop
 BEAM_WIDTH = 60
+FILL_BEAM_WIDTH = 10  # filling freed time around kept stops: few stops to add, so a narrow beam suffices
 MAX_REQUIRED_STOPS = 7
 
 
@@ -382,13 +383,65 @@ def _named_notes(named: set[str], new_ids: set[str], repo: POIRepository, alread
             for i in sorted(named - new_ids - already_noted)]
 
 
+def _keep_most(current: list[POI], scores: Mapping[str, float], ctx: Context, keep: set[str], named: set[str]) -> list[POI]:
+    """The largest order-preserving subset of the current stops that still fits,
+    best value among subsets of that size: drop as few stops as possible."""
+    for k in range(len(current), 0, -1):
+        best = None
+        for combo in combinations(current, k):
+            stops, failed = schedule(list(combo), ctx)
+            if not failed:
+                v = value(stops, scores, keep, named)
+                if best is None or v > best[0]:
+                    best = (v, list(combo))
+        if best:
+            return best[1]
+    return []
+
+
+def _fill(base: list[POI], pool: list[POI], scores: Mapping[str, float], ctx: Context, limit: int,
+          keep: set[str], named: set[str]) -> list[Stop] | None:
+    """Insert extra places at any position, keeping the order of `base`, and
+    return the best plan found. A small beam over insertions, not a greedy
+    pick: an early insertion can block better ones (an outdoor stop pushed into
+    the rain). None if `base` itself does not fit in `ctx`."""
+    stops, failed = schedule(list(base), ctx)
+    if failed:
+        return None
+    best = (value(stops, scores, keep, named), list(base), stops)
+    frontier = [best]
+    for _ in range(limit - len(base)):
+        expanded: dict[tuple, tuple] = {}
+        for _, seq, _ in frontier:
+            used = {p.id for p in seq}
+            for cand in pool:
+                if cand.id in used:
+                    continue
+                for pos in range(len(seq) + 1):
+                    trial = seq[:pos] + [cand] + seq[pos:]
+                    trial_stops, failed = schedule(trial, ctx)
+                    if failed:
+                        continue
+                    key = tuple(p.id for p in trial)
+                    if key not in expanded:
+                        expanded[key] = (value(trial_stops, scores, keep, named), trial, trial_stops)
+        frontier = sorted(expanded.values(), key=lambda n: (-n[0], [p.id for p in n[1]]))[:FILL_BEAM_WIDTH]
+        if not frontier:
+            break
+        if frontier[0][0] > best[0]:
+            best = frontier[0]
+    return best[2]
+
+
 def replan_preserving(
     itin: Itinerary, c: PlanConstraints, repo: POIRepository, scores: Mapping[str, float], rain: RainWindows | None = None,
     named: set[str] = frozenset(),
 ) -> PlanResult:
     """Apply changed constraints (window, exclusions, child, interests) to an
-    existing plan, keeping the stops that still satisfy them where possible;
-    places the visitor named are kept first."""
+    existing plan with as few changes as possible: keep the most current stops
+    that still fit (named places first), then fill the freed time. Only if no
+    current stop fits is the plan rebuilt. Seen in testing: ending 30 min
+    earlier rebuilt the plan and dropped the Old Fortress for two short stops."""
     ctx = Context.from_constraints(c, rain)
     current = [repo.get(i) for i in itin.poi_ids()]
     still_allowed = [p for p in current if constraint_violation(p, c) is None and (not c.categories or p.category in c.categories)]
@@ -404,12 +457,19 @@ def replan_preserving(
     pool = [p for p in candidates(repo.all(), c, scores) if p.hours_known]
     pool += [p for p in still_allowed if p not in pool]
     keep = {p.id for p in still_allowed}
-    best = beam_search(pool, scores, Context.from_constraints(c, rain, reserve=True), c.stop_limit, keep=keep, named=named)
-    if not best.stops:
-        best = beam_search(pool, scores, ctx, c.stop_limit, keep=keep, named=named)
-    if not best.stops:
+    reserve_ctx = Context.from_constraints(c, rain, reserve=True)
+    kept = _keep_most(still_allowed[: c.stop_limit], scores, ctx, keep, named)
+    if kept:
+        # fill within the reserve when the kept stops allow it, so later changes still have room
+        new_stops = _fill(kept, pool, scores, reserve_ctx, c.stop_limit, keep, named) or schedule(kept, ctx)[0]
+    else:
+        best = beam_search(pool, scores, reserve_ctx, c.stop_limit, keep=keep, named=named)
+        if not best.stops:
+            best = beam_search(pool, scores, ctx, c.stop_limit, keep=keep, named=named)
+        new_stops = list(best.stops)
+    if not new_stops:
         return PlanResult(status="infeasible", itinerary=itin, notes=[*notes, "Nothing fits the new constraints; the previous itinerary is unchanged."])
-    new = _itinerary(c, best.stops)
+    new = _itinerary(c, new_stops)
     old_ids, new_ids = set(itin.poi_ids()), set(new.poi_ids())
     notes += _named_notes(named, new_ids, repo, already_noted={p.id for p in current if p not in still_allowed})
     changes = [f"Kept {repo.get(i).name}." for i in itin.poi_ids() if i in new_ids]

@@ -35,6 +35,10 @@ def test_tool_schemas_use_a_portable_json_schema_subset():
     assert "$ref" not in text and "$defs" not in text and '"null"' not in text
     for spec in openai_tool_specs():
         assert spec["function"]["parameters"]["type"] == "object"
+    # "format": "time" means HH:MM:SS; Groq validates against it and rejected "13:00"
+    assert '"format": "time"' not in text
+    plan = next(s for s in openai_tool_specs() if s["function"]["name"] == "plan_itinerary")["function"]["parameters"]["properties"]
+    assert plan["start_time"] == {"type": "string", "description": "HH:MM local time."}
 
 
 def test_enum_fields_are_inlined():
@@ -232,6 +236,33 @@ def test_stated_times_raise_no_notice(deps, texts, start, end):
     assert out.notices == [] and "assumed_times" not in out.data
 
 
+def test_places_and_stop_count_the_visitor_never_gave_are_ignored(deps):
+    """Seen live (gpt-oss-120b): a topic request was turned into a two-stop feasibility check."""
+    s = said("Plan a four-hour itinerary in Corfu focused on Venetian history and fortresses on Wednesday, October 7, 2026, from 13:00 to 17:00.")
+    out = call(s, deps, "plan_itinerary", date="2026-10-07", start_time="13:00", end_time="17:00",
+               interests=["Venetian history", "fortresses"], must_include_places=["Old Fortress", "New Fortress"], max_stops=3)
+    assert s.preferences.named_places == []
+    assert len(out.data["ignored_arguments"]) == 3 and len(s.itinerary.stops) > 3  # an ordinary plan, not a 2-place check
+
+
+@pytest.mark.parametrize("text, args, ids", [
+    ("Can we walk to the Liston, the Old Fortress and Town Hall Square on 8 October 2026, 10:00-13:30?",
+     ["Liston Arcades", "Old Fortress", "Town Hall Square"], {"CF-032", "CF-001", "CF-016"}),
+    ("Squeeze the Archaeological Museum, the Byzantine Museum, Casa Parlante, the Asian Art museum and the Old Fortress "
+     "into 8 October 2026 from 10:00 to 13:30.", ["CF-031", "CF-029", "CF-007", "CF-017", "CF-001"], {"CF-031", "CF-029", "CF-007", "CF-017", "CF-001"}),
+])
+def test_places_the_visitor_named_are_recognised(deps, text, args, ids):
+    s = said(text)
+    out = call(s, deps, "plan_itinerary", date="2026-10-08", start_time="10:00", end_time="13:30", must_include_places=args)
+    assert set(s.preferences.named_places) == ids and "ignored_arguments" not in out.data
+
+
+def test_stated_stop_count_is_kept(deps):
+    out = call(said("I want to see five museums on 30/10 from 16:00 for one hour"), deps, "plan_itinerary",
+               date="2026-10-30", start_time="16:00", duration_minutes=60, interests=["museums"], max_stops=5)
+    assert "ignored_arguments" not in out.data and out.data["status"] == "partial"
+
+
 def test_unstated_end_time_is_flagged(deps):
     out = call(said("history walk on 6 Oct 2026 from 11:00"), deps, "plan_itinerary",
                date="2026-10-06", start_time="11:00", end_time="15:00", interests=["history"])
@@ -348,6 +379,19 @@ def test_a_replaced_stop_does_not_come_back(deps):
     call(s, deps, "replace_stop", stop_number=2)
     call(s, deps, "revise_itinerary", end_time="14:30")
     assert replaced in s.preferences.excluded_poi_ids and replaced not in s.itinerary.poi_ids()
+
+
+def test_an_earlier_end_drops_as_few_stops_as_possible(deps):
+    """Seen live: ending 30 min earlier rebuilt the plan and dropped the Old Fortress for two short stops."""
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-06", start_time="11:00", end_time="15:00", interests=["historical attractions"], categories=["history"])
+    call(s, deps, "replace_stop", stop_number=2)
+    before = s.itinerary.poi_ids()
+    out = call(s, deps, "revise_itinerary", end_time="14:30")
+    after = s.itinerary.poi_ids()
+    assert "CF-001" in after and len(set(before) - set(after)) == 1  # one stop dropped, the Old Fortress kept
+    assert [i for i in before if i in after] == after  # the kept stops stay in their order
+    assert out.data["validation"]["ok"] and s.itinerary.finish.strftime("%H:%M") <= "14:30"
 
 
 def test_places_named_by_the_visitor_survive_later_changes(deps):
