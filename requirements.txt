@@ -1,0 +1,12 @@
+# Direct dependencies (compatible ranges). The Docker image installs the exact
+# tested versions from requirements.lock.
+pydantic>=2.7,<3
+tzdata>=2024.1
+numpy>=2.0,<3
+fastembed>=0.4,<1
+httpx>=0.27,<1
+openai>=1.40,<4
+fastapi>=0.110,<1
+uvicorn>=0.29,<1
+python-dotenv>=1.0,<2
+pytest>=8,<10

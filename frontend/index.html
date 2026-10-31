@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corfu Travel Assistant</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #5d6677; --border: #dde1e8;
+    --accent: #1f6feb; --user: #e8f0fe; --mono-bg: #f3f5f8; --warn: #9a6700; --err: #b42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1218; --panel: #171b23; --text: #e6e9ef; --muted: #98a1b3; --border: #2a303c;
+      --accent: #5b9dff; --user: #1d2a44; --mono-bg: #11151c; --warn: #e3b341; --err: #ff7b72;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .app { max-width: 920px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; padding: 0 16px; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between;
+           padding: 16px 0 12px; border-bottom: 1px solid var(--border); }
+  h1 { font-size: 18px; margin: 0; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--border);
+           background: var(--panel); color: var(--text); padding: 6px 12px; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .55; cursor: default; }
+  label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+  #log { flex: 1; padding: 16px 0; display: flex; flex-direction: column; gap: 14px; }
+  .msg { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel);
+         white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.user { background: var(--user); align-self: flex-end; max-width: 85%; }
+  .msg.error { color: var(--err); }
+  .msg.info { color: var(--muted); font-size: 13px; text-align: center; border-style: dashed; }
+  pre.itinerary { margin: 10px 0 0; padding: 10px 12px; background: var(--mono-bg); border-radius: 8px;
+                  border: 1px solid var(--border); white-space: pre; overflow-x: auto; font-size: 13px; }
+  .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+  .tag { border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; color: var(--muted); }
+  .tag.synthetic { color: var(--warn); border-color: var(--warn); }
+  details { margin-top: 8px; font-size: 13px; color: var(--muted); }
+  details pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--mono-bg); padding: 8px;
+                border-radius: 6px; max-height: 320px; overflow-y: auto; }
+  .examples { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 10px; }
+  .examples button { font-size: 12px; padding: 4px 10px; border-radius: 999px; color: var(--muted); }
+  form { position: sticky; bottom: 0; background: var(--bg); padding: 10px 0 16px; border-top: 1px solid var(--border);
+         display: flex; gap: 8px; }
+  textarea { flex: 1; font: inherit; resize: vertical; min-height: 46px; max-height: 200px; padding: 10px 12px;
+             border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); }
+  .typing { color: var(--muted); font-size: 13px; }
+  .notice { margin-top: 10px; padding: 8px 12px; border-left: 3px solid var(--warn); background: var(--mono-bg);
+            border-radius: 6px; font-size: 13px; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>Corfu Travel Assistant</h1>
+      <div class="meta" id="status">Answers come from the 50-place dataset; opening hours are exercise fixtures.</div>
+    </div>
+    <div class="controls">
+      <label title="Inject data/corfu_synthetic_rain.json as the weather-tool response (scenario D). Applies to a new conversation.">
+        <input type="checkbox" id="fixture"> synthetic rain fixture
+      </label>
+      <button type="button" id="newChat">New conversation</button>
+      <a class="meta" href="/docs">API docs</a>
+    </div>
+  </header>
+
+  <div id="log" aria-live="polite"></div>
+
+  <div class="examples" id="examples"></div>
+  <form id="form">
+    <textarea id="input" placeholder="Ask about Corfu, or ask for a plan, e.g. a 4-hour history walk on Tuesday, October 6, 2026, from 11:00" required></textarea>
+    <button class="primary" id="send" type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+// The page only calls the public REST API (POST /chat, GET /health), like any other client.
+const EXAMPLES = [
+  ["A", "Plan a four-hour visit to Corfu focused on art and museums on Monday, October 5, 2026, from 13:00 to 17:00."],
+  ["B", "Plan a four-hour walking itinerary in Corfu focused on historical attractions on Tuesday, October 6, 2026, from 11:00 to 15:00."],
+  ["B follow-up", "Replace the second stop with something suitable for my 10-year-old daughter. Keep the rest of my itinerary and make sure we still finish by 15:00."],
+  ["C", "Can I visit Old Fortress, New Fortress, Achilleion Palace, Mon Repos Museum of Palaiopolis, and Museum of Asian Art on foot in just 90 minutes on Tuesday, October 6, 2026, between 11:00 and 12:30? Create an itinerary if possible."],
+  ["D", "Plan a four-hour itinerary in Corfu focused on outdoor historical attractions on Wednesday, October 7, 2026, from 13:00 to 17:00."],
+  ["D follow-up", "Can you check the weather for Wednesday, October 7, 2026, afternoon and adapt my existing itinerary if needed while keeping the original 13:00 - 17:00 time window?"],
+  ["E", "What is the weather forecast for Corfu for the next 24 hours? Should I expect rain?"],
+];
+
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+const fixture = document.getElementById("fixture");
+const status = document.getElementById("status");
+let sessionId = null;
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+// Minimal, safe rendering of the model's **bold** markers (no innerHTML).
+function appendRich(parent, text) {
+  text.split(/(\*\*[^*]+\*\*)/g).forEach(part => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) parent.appendChild(el("strong", "", part.slice(2, -2)));
+    else parent.appendChild(document.createTextNode(part));
+  });
+}
+
+function scrollDown() { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }
+
+function addUser(text) { log.appendChild(el("div", "msg user", text)); scrollDown(); }
+function addInfo(text) { log.appendChild(el("div", "msg info", text)); }
+
+function addReply(r) {
+  const box = el("div", "msg");
+  appendRich(box, r.text);
+  if (r.itinerary_text) box.appendChild(el("pre", "itinerary", r.itinerary_text));
+  // App-generated notices (e.g. a time the visitor never gave), shown verbatim, not via the LLM.
+  (r.notices || []).forEach(n => box.appendChild(el("div", "notice", "Note: " + n)));
+
+  const tags = el("div", "tags");
+  (r.sources || []).forEach(s => tags.appendChild(el("span", "tag", s)));
+  (r.weather_sources || []).forEach(w =>
+    tags.appendChild(el("span", "tag" + (w === "synthetic_fixture" ? " synthetic" : ""), "weather: " + w)));
+  if (tags.childNodes.length) box.appendChild(tags);
+
+  if (r.tool_trace && r.tool_trace.length) {
+    const d = el("details");
+    d.appendChild(el("summary", "", "Tool trace (" + r.tool_trace.map(t => t.tool).join(", ") + ")"));
+    r.tool_trace.forEach(t => {
+      d.appendChild(el("div", "", t.tool + "(" + JSON.stringify(t.arguments) + ")"));
+      d.appendChild(el("pre", "", JSON.stringify(t.result, null, 2)));
+    });
+    box.appendChild(d);
+  }
+  log.appendChild(box);
+  scrollDown();
+}
+
+function newConversation() {
+  sessionId = null;
+  fixture.disabled = false;
+  log.replaceChildren();
+  addInfo("New conversation" + (fixture.checked ? " · synthetic rain fixture will be used for weather" : " · live weather"));
+  input.focus();
+}
+
+function postChat(message) {
+  const body = { message };
+  if (sessionId) body.session_id = sessionId;
+  else if (fixture.checked) body.weather_fixture = "corfu_synthetic_rain.json";
+  return fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+}
+
+async function ask(message) {
+  addUser(message);
+  send.disabled = true;
+  const typing = el("div", "typing", "Thinking… (the LLM may call several tools)");
+  log.appendChild(typing);
+  scrollDown();
+
+  try {
+    let res = await postChat(message);
+    if (res.status === 404 && sessionId) {
+      // Sessions live in server memory; a server restart (e.g. uvicorn --reload) drops them.
+      sessionId = null;
+      fixture.disabled = false;
+      log.insertBefore(el("div", "msg info", "The server restarted, so the previous conversation was lost. "
+        + "Your message was sent in a new conversation; earlier preferences and plans are not remembered."), typing);
+      res = await postChat(message);
+    }
+    const data = await res.json().catch(() => ({}));
+    typing.remove();
+    if (!res.ok) {
+      const detail = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || data);
+      log.appendChild(el("div", "msg error", "Error " + res.status + ": " + detail));
+      return;
+    }
+    sessionId = data.session_id;
+    fixture.disabled = true;  // weather mode is fixed per conversation
+    addReply(data);
+  } catch (err) {
+    typing.remove();
+    log.appendChild(el("div", "msg error", "Could not reach the server: " + err));
+  } finally {
+    send.disabled = false;
+    scrollDown();
+  }
+}
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text || send.disabled) return;
+  input.value = "";
+  ask(text);
+});
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+});
+document.getElementById("newChat").addEventListener("click", newConversation);
+fixture.addEventListener("change", () => { if (!sessionId) newConversation(); });
+
+EXAMPLES.forEach(([label, text]) => {
+  const b = el("button", "", label);
+  b.type = "button";
+  b.title = text;
+  b.addEventListener("click", () => { input.value = text; input.focus(); });
+  document.getElementById("examples").appendChild(b);
+});
+
+fetch("/health").then(r => r.json()).then(h => {
+  status.textContent += " · model " + h.model + (h.llm_key_configured ? "" : " · LLM_API_KEY not set");
+}).catch(() => {});
+
+newConversation();
+</script>
+</body>
+</html>

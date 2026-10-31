@@ -1,0 +1,15 @@
+# secrets never enter the image; credentials come from --env-file / env_file at runtime
+.env
+.env.*
+!.env.example
+
+.venv/
+.cache/
+storage/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.vscode/
+.idea/
+*.docx

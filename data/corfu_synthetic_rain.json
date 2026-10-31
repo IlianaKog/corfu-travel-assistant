@@ -1,0 +1,40 @@
+{
+  "fixture_type": "synthetic_weather_for_reproducible_test_only",
+  "is_live": false,
+  "place": "Corfu Town",
+  "timezone": "Europe/Athens",
+  "date": "2026-10-07",
+  "scenario": "Rain begins after 15:00 local time; use for weather-driven itinerary re-planning tests.",
+  "hourly": [
+    {
+      "local_time": "2026-10-07T13:00:00",
+      "temperature_c": 23,
+      "precipitation_mm": 0,
+      "weather_code": 1
+    },
+    {
+      "local_time": "2026-10-07T14:00:00",
+      "temperature_c": 23,
+      "precipitation_mm": 0,
+      "weather_code": 2
+    },
+    {
+      "local_time": "2026-10-07T15:00:00",
+      "temperature_c": 21,
+      "precipitation_mm": 3.2,
+      "weather_code": 63
+    },
+    {
+      "local_time": "2026-10-07T16:00:00",
+      "temperature_c": 20,
+      "precipitation_mm": 4.1,
+      "weather_code": 63
+    },
+    {
+      "local_time": "2026-10-07T17:00:00",
+      "temperature_c": 20,
+      "precipitation_mm": 1.8,
+      "weather_code": 61
+    }
+  ]
+}

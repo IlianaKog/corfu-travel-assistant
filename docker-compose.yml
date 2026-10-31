@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    image: corfu-assistant
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      # evaluation and demo output (results.md, transcript.md) land on the host
+      - ./eval:/app/eval
+      - ./demo:/app/demo
+    extra_hosts:
+      # lets LLM_BASE_URL=http://host.docker.internal:11434/v1 reach Ollama on the host (Linux too)
+      - "host.docker.internal:host-gateway"

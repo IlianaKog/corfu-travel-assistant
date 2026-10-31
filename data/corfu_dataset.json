@@ -1,0 +1,1596 @@
+{
+  "dataset": "Corfu tourist assistant — recruitment fixture",
+  "version": "2.0",
+  "notice": "Edited, research-enriched POI sample prepared for a technical exercise from a curated tourism source export. Names/locations and descriptive heritage context are not a live operational feed. All opening_hours_fixture values, family_suitability_fixture and suggested_visit_minutes are exercise-only assumptions; they do not assert current business hours, accessibility, child safety, event availability or real-world admission. source_urls support checking historical/descriptive statements, not current access. Use a live weather API for the real-time weather demonstration; use separate recorded weather fixtures for repeatable scenario tests.",
+  "timezone": "Europe/Athens",
+  "fields_note": {
+    "opening_hours_fixture": "Weekday schedule mon-sun in local time. Null whole field = no confirmed exercise opening window. Null weekday = closed in exercise. End earlier than start (e.g. 20:00-02:00) means next calendar day. 00:00-24:00 = continuous access in this *exercise only*.",
+    "setting": "indoor, outdoor or mixed; coarse exposure class for simulated weather-aware planning. Mixed is not guaranteed indoor shelter.",
+    "suggested_visit_minutes": "Synthetic visit or meal duration estimate, not an advertised visitor duration.",
+    "family_suitability_fixture": "true = suitable for a general family-oriented exercise in principle; false = exclude from the child-oriented exercise; null = unspecified. These are synthetic pedagogical flags, not real-world accessibility or safety certifications.",
+    "source_urls": "Research references for evergreen background details. Not a statement that a shop, museum, event or outdoor space is currently accessible.",
+    "area": "Approximate locality label from editorial review; use coordinates for proximity checks, not area equality.",
+    "description_provenance": "Editorial trace of what verifies the description. A place mentioned in the source export is not necessarily independently confirmed to be operating."
+  },
+  "pois": [
+    {
+      "id": "CF-001",
+      "name": "Old Fortress",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "fortress",
+        "venetian",
+        "viewpoint"
+      ],
+      "location": {
+        "latitude": 39.6231266,
+        "longitude": 19.9285412
+      },
+      "description": "The Old Fortress occupies the rocky promontory east of Corfu's Old Town and forms part of the town's UNESCO-listed defensive ensemble. Venetian engineers developed bastions, ramparts and two high points separated from the town by a sea moat; later British-period buildings remain visible within the walls. An entrance bridge leads through the western fortifications, while uphill passages open views towards the town and the sea. It is an extensive, partly exposed visit rather than a single viewpoint, so a walking plan should reserve time for elevation changes.",
+      "setting": "mixed",
+      "suggested_visit_minutes": 85,
+      "opening_hours_fixture": {
+        "mon": "09:00-17:00",
+        "tue": "09:00-17:00",
+        "wed": "09:00-17:00",
+        "thu": "09:00-17:00",
+        "fri": "09:00-17:00",
+        "sat": "09:00-17:00",
+        "sun": "09:00-17:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/sights/old-fortress/",
+        "https://whc.unesco.org/en/list/978"
+      ],
+      "family_suitability_fixture": null,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-002",
+      "name": "New Fortress",
+      "area": "Mantouki",
+      "category": "history",
+      "tags": [
+        "fortress",
+        "venetian",
+        "viewpoint"
+      ],
+      "location": {
+        "latitude": 39.6251438,
+        "longitude": 19.9168328
+      },
+      "description": "The New Fortress overlooks the old harbour from the western side of Corfu's historic centre. Its Venetian defensive works include substantial stone bastions, passages and multiple levels; later British structures form part of the complex. The upper areas offer views of rooftops and the harbour, but reaching them takes more time than viewing the entrance gate alone. In a short itinerary, its earlier closing fixture and the uphill approach should be considered before inserting it late in the afternoon.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 65,
+      "opening_hours_fixture": {
+        "mon": "09:00-15:30",
+        "tue": null,
+        "wed": "09:00-15:30",
+        "thu": "09:00-15:30",
+        "fri": "09:00-15:30",
+        "sat": "09:00-15:30",
+        "sun": "09:00-15:30"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/sights/new-fortress/",
+        "https://whc.unesco.org/en/list/978"
+      ],
+      "family_suitability_fixture": null,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-003",
+      "name": "Kremasti Square and Cistern",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "architecture",
+        "venetian",
+        "square"
+      ],
+      "location": {
+        "latitude": 39.6263596,
+        "longitude": 19.9219174
+      },
+      "description": "Kremasti Square lies among the closely spaced lanes of Campiello, a neighbourhood shaped by Corfu's Venetian period. Its ornamented stone cistern records the central place of shared water storage in the life of the Old Town. The small square provides a short architecture and local-history stop rather than a large indoor attraction. It pairs naturally with nearby churches and residential streets, but its open-air character makes it a less suitable rain substitute.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 20,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu",
+        "https://whc.unesco.org/en/list/978"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-004",
+      "name": "Saint Spyridon Church",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "religion",
+        "art",
+        "architecture"
+      ],
+      "location": {
+        "latitude": 39.6253463,
+        "longitude": 19.9227006
+      },
+      "description": "The Church of Saint Spyridon is dedicated to Corfu's patron saint and is one of the island's most important religious sites. The present church dates from the late sixteenth century; its tall bell tower recalls that of San Giorgio dei Greci in Venice. Inside are post-Byzantine artworks and a silver reliquary associated with Saint Spyridon's relics. The presence of a place of worship does not establish visitor access at any particular hour: indoor access must remain unconfirmed if no schedule is supplied.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 25,
+      "opening_hours_fixture": null,
+      "source_urls": [
+        "https://visit.corfu.gr/sights/the-church-of-st-spyridon/",
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "family_suitability_fixture": null,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-005",
+      "name": "Campiello Quarter",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "walking",
+        "architecture",
+        "venetian"
+      ],
+      "location": {
+        "latitude": 39.6259486,
+        "longitude": 19.9240202
+      },
+      "description": "Campiello is one of the oldest quarters of Corfu's Old Town, with tight lanes, stairways, small squares and buildings showing the influence of centuries of Venetian rule. The district's layout resembles the small urban campielli found in Venice, while churches and former noble houses add layers of local history. It is best experienced as a slow outdoor walk rather than a fixed-duration museum visit. A sensible route can connect Campiello with Kremasti Square and Saint Spyridon Church without excessive backtracking.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 35,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://whc.unesco.org/en/list/978",
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-006",
+      "name": "Maitland Rotunda",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "architecture",
+        "monument",
+        "square"
+      ],
+      "location": {
+        "latitude": 39.6220104,
+        "longitude": 19.9246532
+      },
+      "description": "The circular Maitland Rotunda stands in the southern section of Spianada Square. Built in 1816 to honour the British commissioner Thomas Maitland, it marks a transition from the island's Venetian defences to its British-period civic architecture. The neoclassical structure also occupies a place associated with a former public cistern, connecting the site's appearance to the square's earlier practical role. It is a brief exterior stop and can be combined with a Spianada walk or nearby monuments.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 15,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/sights/spianada-square/",
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-007",
+      "name": "Casa Parlante Museum",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "museum",
+        "family",
+        "history"
+      ],
+      "location": {
+        "latitude": 39.6244033,
+        "longitude": 19.9230654
+      },
+      "description": "Casa Parlante recreates daily life in a nineteenth-century Corfiot noble household within a historic Old Town mansion. Period-style rooms, furnishings, animated figures, sounds and other sensory details are used to explain domestic routines and social customs. The experience differs from a conventional gallery of static objects, offering a focused introduction to local social history. It is an indoor candidate for a weather-adjusted itinerary, subject to the exercise's opening-hours fixture.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 55,
+      "opening_hours_fixture": {
+        "mon": "10:00-17:00",
+        "tue": "10:00-17:00",
+        "wed": "10:00-17:00",
+        "thu": "10:00-17:00",
+        "fri": "10:00-17:00",
+        "sat": "10:00-17:00",
+        "sun": "10:00-17:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/museums/casa-parlante/",
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-008",
+      "name": "Gate of the New Fortress",
+      "area": "Mantouki",
+      "category": "history",
+      "tags": [
+        "fortress",
+        "venetian",
+        "architecture"
+      ],
+      "location": {
+        "latitude": 39.6260519,
+        "longitude": 19.9185431
+      },
+      "description": "The Gate of the New Fortress forms part of the Venetian fortifications above Corfu's old harbour. Decorative stonework and the monumental approach illustrate how the town controlled movement between its port and defensive perimeter. A visit to the gate can be treated as a short exterior architecture stop; it should not be conflated with a full walk through the upper bastions of the New Fortress. The separate POI entries let an itinerary choose one or both stops without treating them as identical.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 15,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/sights/new-fortress/",
+        "https://whc.unesco.org/en/list/978"
+      ],
+      "family_suitability_fixture": null,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-009",
+      "name": "Old Town Hall (Loggia dei Nobili)",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "architecture",
+        "theatre",
+        "history"
+      ],
+      "location": {
+        "latitude": 39.6237778,
+        "longitude": 19.922199
+      },
+      "description": "The former Loggia dei Nobili served as a civic gathering place before conversion into the San Giacomo theatre and later Corfu's town hall. Its Renaissance-influenced facade and location beside Town Hall Square reflect how public buildings changed use across Venetian and later periods. The building helps explain the island's longstanding musical and theatrical culture: San Giacomo was among the region's early opera venues. In this dataset the attraction is an exterior visit, not a ticketed interior tour.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 20,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/",
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-010",
+      "name": "Palace of St. Michael and St. George",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "architecture",
+        "palace",
+        "history"
+      ],
+      "location": {
+        "latitude": 39.6259532,
+        "longitude": 19.924739
+      },
+      "description": "The Palace of Saint Michael and Saint George was constructed under British administration in the early nineteenth century to serve official and ceremonial functions. Its grand neoclassical facade frames the northern end of Spianada and features a row of Doric columns and prominent arches. The building also housed institutions of the Ionian State and today contains the Museum of Asian Art. This POI represents the palace exterior; the museum is modelled separately so the planner can avoid counting a facade stop as an indoor museum visit.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 25,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/arts-culture/palace-of-st-michael-and-st-george/",
+        "https://www.visitgreece.gr/en/experiences/architecture/picturesque-villages/museum-of-asian-art-of-corfu"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-011",
+      "name": "Garden of the People",
+      "area": "Old Town of Corfu",
+      "category": "nature",
+      "tags": [
+        "garden",
+        "relaxation",
+        "outdoor"
+      ],
+      "location": {
+        "latitude": 39.6251645,
+        "longitude": 19.925415
+      },
+      "description": "The Garden of the People is a small green space behind the Palace of Saint Michael and Saint George, close to the seafront and the eastern edge of the Old Town. It gives a visitor a quieter outdoor pause between the palace, Faliraki waterfront and other historic sights. This is a short rest or stroll rather than a substitute for the Palace's indoor museum. Rain, heat and walking pace can influence whether to retain the garden in a tightly timed schedule.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 25,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/arts-culture/palace-of-st-michael-and-st-george/",
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-012",
+      "name": "Corfu Philharmonic Music Museum",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "museum",
+        "music",
+        "art"
+      ],
+      "location": {
+        "latitude": 39.6242437,
+        "longitude": 19.9232524
+      },
+      "description": "The Corfu Philharmonic Society's Nikolaos Halikiopoulos Mantzaros Music Museum documents the island's distinctive band and music-education tradition. Founded in 1840, the society is among Greece's earliest institutions for organized music education; its museum opened in 2010. Displays include historic instruments, scores, photographs, documents and material linked to composer Nikolaos Mantzaros. It provides a compact indoor choice for someone interested in Corfiot cultural life rather than conventional archaeology.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 45,
+      "opening_hours_fixture": {
+        "mon": "10:00-16:00",
+        "tue": null,
+        "wed": "10:00-16:00",
+        "thu": "10:00-16:00",
+        "fri": "10:00-16:00",
+        "sat": "10:00-16:00",
+        "sun": "10:00-16:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/museums/nikolaos-halikiopoulos-mantzaros-music-museum/",
+        "https://visit.corfu.gr/arts-culture/filarmonikh-etaireia-kerkyras-palaia/"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-013",
+      "name": "Historic Jewish Synagogue",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "religion",
+        "heritage",
+        "history"
+      ],
+      "location": {
+        "latitude": 39.6241512,
+        "longitude": 19.9192566
+      },
+      "description": "Corfu's surviving historic synagogue recalls a Jewish community with Romaniote and later Italian-speaking traditions. The Jewish Museum of Greece documents the community's long presence, its distinct congregations and the destruction and deportations it suffered during the Holocaust. The synagogue is a religious and historical site, not an attraction whose interior can automatically be assumed open to tourists. In a proposed itinerary, visitors may be directed to the surrounding quarter while interior access remains subject to confirmation.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 35,
+      "opening_hours_fixture": null,
+      "source_urls": [
+        "https://jewishmuseum.gr/en/psifiaki-ekthesi/at-the-crossroads-the-jewish-community-of-corfu/"
+      ],
+      "family_suitability_fixture": null,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-014",
+      "name": "Municipal Art Gallery of Corfu",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "gallery",
+        "art",
+        "museum"
+      ],
+      "location": {
+        "latitude": 39.6255919,
+        "longitude": 19.9251977
+      },
+      "description": "The Municipal Art Gallery presents visual art connected with Corfu and the wider development of Greek painting. Its collection ranges across several centuries and complements the city's historic buildings by focusing on artists rather than architecture alone. The gallery is associated with the Palace of Saint Michael and Saint George complex, allowing an Old Town cultural walk to combine outdoor and indoor stops. When replacing a rainy outdoor activity, the itinerary still needs to check the gallery's test-fixture closing day and available visit time.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 55,
+      "opening_hours_fixture": {
+        "mon": null,
+        "tue": "10:00-16:00",
+        "wed": "10:00-16:00",
+        "thu": "10:00-16:00",
+        "fri": "10:00-16:00",
+        "sat": "10:00-16:00",
+        "sun": "10:00-16:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/arts-culture/palace-of-st-michael-and-st-george/",
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "family_suitability_fixture": null,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-015",
+      "name": "Boschetto Garden",
+      "area": "Old Town of Corfu",
+      "category": "nature",
+      "tags": [
+        "garden",
+        "relaxation",
+        "outdoor"
+      ],
+      "location": {
+        "latitude": 39.6243693,
+        "longitude": 19.9254793
+      },
+      "description": "Boschetto, also known as the Durrell Gardens, is a landscaped municipal garden near the entrance to the Old Fortress. It sits between the fortified promontory and the historic centre, making it a natural short break before or after a fortress visit. The site combines planting, walking paths and an open-air setting rather than indoor exhibitions. A route planner should not replace a rain-affected museum stop with Boschetto merely because the two sites are geographically close.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 20,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/sights/old-fortress/",
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-016",
+      "name": "Town Hall Square",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "square",
+        "architecture",
+        "walking"
+      ],
+      "location": {
+        "latitude": 39.6233446,
+        "longitude": 19.9223791
+      },
+      "description": "Town Hall Square is a compact civic space framed by buildings that illustrate Corfu's Venetian and later urban history. The former Loggia dei Nobili/San Giacomo theatre gives the square a connection with the island's theatrical and musical traditions. It is suitable for a short stop on an architecture-focused Old Town walk, ideally grouped with nearby lanes and the cathedral area. This entry represents the square itself; the former town-hall building is a separate POI with its own description.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 20,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu",
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-017",
+      "name": "Museum of Asian Art",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "museum",
+        "art",
+        "palace"
+      ],
+      "location": {
+        "latitude": 39.6257214,
+        "longitude": 19.9247069
+      },
+      "description": "Corfu's Museum of Asian Art occupies rooms in the Palace of Saint Michael and Saint George and originated from a collection of East Asian art donated by diplomat Grigorios Manos. Its holdings include Chinese and Japanese works as well as art associated with other parts of Asia, including Buddhist sculpture from Gandhara. This makes it a distinct indoor museum visit rather than a general tour of Corfiot architecture. The dataset intentionally models it separately from the palace's exterior stop and gives it a fixture closing day for itinerary validation.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 65,
+      "opening_hours_fixture": {
+        "mon": null,
+        "tue": "10:00-17:00",
+        "wed": "10:00-17:00",
+        "thu": "10:00-17:00",
+        "fri": "10:00-17:00",
+        "sat": "10:00-17:00",
+        "sun": "10:00-17:00"
+      },
+      "source_urls": [
+        "https://www.visitgreece.gr/en/experiences/architecture/picturesque-villages/museum-of-asian-art-of-corfu",
+        "https://visit.corfu.gr/arts-culture/palace-of-st-michael-and-st-george/"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-018",
+      "name": "Patounis' Soap Factory",
+      "area": "Mantouki",
+      "category": "local_market",
+      "tags": [
+        "craft",
+        "local_market",
+        "heritage"
+      ],
+      "location": {
+        "latitude": 39.6223944,
+        "longitude": 19.917276
+      },
+      "description": "Patounis' Soap Factory is an operating traditional olive-soap workshop established in Corfu in 1891 as part of a family enterprise whose history began earlier on Zakynthos. Original equipment and a cauldron-based soap-making process preserve an example of local industrial and craft heritage. The workshop has been recognized as an industrial-heritage monument, while its inherited soap-making technique has been recorded in Greece's inventory of intangible heritage. A visit may involve different shop and workshop arrangements; current access should not be inferred from the exercise fixture.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 30,
+      "opening_hours_fixture": null,
+      "source_urls": [
+        "https://www.patounis.gr/",
+        "https://visit.corfu.gr/arts-culture/%CE%B7-%CF%83%CE%B1%CF%80%CF%89%CE%BD%CE%BF%CF%80%CE%BF%CE%B9%CE%AF%CE%B1-%CF%80%CE%B1%CF%84%CE%BF%CF%8D%CE%BD%CE%B7/"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-019",
+      "name": "Faliraki Waterfront",
+      "area": "Old Town of Corfu",
+      "category": "nature",
+      "tags": [
+        "waterfront",
+        "viewpoint",
+        "outdoor"
+      ],
+      "location": {
+        "latitude": 39.6261744,
+        "longitude": 19.9252787
+      },
+      "description": "Faliraki is a waterfront stopping point close to the Old Fortress and the Palace of Saint Michael and Saint George. It offers sea views and a brief outdoor break without requiring a full excursion outside Corfu Town. The location can be connected to the Garden of the People or a walk around the eastern walls. This dataset establishes neither safe swimming conditions nor lifeguard coverage, so the chatbot should not convert a scenic recommendation into an unsupported water-safety assurance.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 30,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/",
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-020",
+      "name": "Garitsa Grove",
+      "area": "Garitsa / Corfu Town",
+      "category": "nature",
+      "tags": [
+        "park",
+        "walking",
+        "outdoor"
+      ],
+      "location": {
+        "latitude": 39.6143113,
+        "longitude": 19.9205734
+      },
+      "description": "Garitsa Grove forms part of the green and waterfront walking environment south of Corfu's historic centre. Its promenade offers a change of pace from the narrow Old Town streets and connects with the wider Garitsa bay area. It takes longer to reach on foot from the eastern fortress than two adjacent Old Town monuments, which makes it useful for testing realistic travel-time estimates. The grove is an outdoor choice and should be reconsidered if live conditions make prolonged walking unsuitable.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 35,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/",
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-021",
+      "name": "Achilleion Palace",
+      "area": "Perama",
+      "category": "history",
+      "tags": [
+        "palace",
+        "museum",
+        "outside_centre"
+      ],
+      "location": {
+        "latitude": 39.5627821,
+        "longitude": 19.9041515
+      },
+      "description": "Achilleion Palace is associated with Empress Elisabeth of Austria, known as Sisi, and later Kaiser Wilhelm II. Set near Gastouri well outside central Corfu Town, the estate combines imperial history, architecture, statuary and landscaped surroundings. The distance from the Old Town makes it unsuitable for insertion into a short walking plan alongside several central monuments. Real visitor access has changed during restoration periods; this dataset uses a synthetic schedule strictly for the planning exercise, not as confirmation of current access to palace rooms or gardens.",
+      "setting": "mixed",
+      "suggested_visit_minutes": 80,
+      "opening_hours_fixture": {
+        "mon": "09:00-16:00",
+        "tue": "09:00-16:00",
+        "wed": "09:00-16:00",
+        "thu": "09:00-16:00",
+        "fri": "09:00-16:00",
+        "sat": "09:00-16:00",
+        "sun": "09:00-16:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/arts-culture/achillion-palace-sissis-palace/",
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "family_suitability_fixture": null,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-022",
+      "name": "Mon Repos Museum of Palaiopolis",
+      "area": "Kanoni",
+      "category": "history",
+      "tags": [
+        "museum",
+        "archaeology",
+        "outside_centre"
+      ],
+      "location": {
+        "latitude": 39.6063264,
+        "longitude": 19.9260842
+      },
+      "description": "The Museum of Palaiopolis occupies the Mon Repos mansion, built during the British period within an estate south of Corfu's Old Town. Its exhibition connects the residence's history with the ancient city of Corcyra and the archaeological landscape of nearby Palaiopolis. The museum is a separate indoor destination from the surrounding Mon Repos Park. A realistic plan must account for the journey to the estate and not treat both POIs as two independent cross-town journeys when they can be grouped.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 60,
+      "opening_hours_fixture": {
+        "mon": "09:00-16:00",
+        "tue": "09:00-16:00",
+        "wed": "09:00-16:00",
+        "thu": "09:00-16:00",
+        "fri": "09:00-16:00",
+        "sat": "09:00-16:00",
+        "sun": "09:00-16:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/sights/mon-repos/",
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-023",
+      "name": "Mon Repos Park",
+      "area": "Kanoni",
+      "category": "nature",
+      "tags": [
+        "park",
+        "walking",
+        "outside_centre"
+      ],
+      "location": {
+        "latitude": 39.607588,
+        "longitude": 19.9234553
+      },
+      "description": "Mon Repos Park surrounds the historic mansion associated with the British administration and later use as a royal residence. Its tree-covered grounds also relate to the archaeological landscape of ancient Palaiopolis. The park is an outdoor walking experience distinct from the Museum of Palaiopolis inside the mansion, although their locations make them natural companion stops. Reaching the estate from the Old Town consumes a meaningful portion of a short walking itinerary.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 50,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "source_urls": [
+        "https://visit.corfu.gr/sights/mon-repos/",
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "family_suitability_fixture": true,
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-024",
+      "name": "Boiler Food Bar",
+      "area": "Mantouki",
+      "category": "food",
+      "tags": [
+        "food",
+        "casual",
+        "restaurant"
+      ],
+      "location": {
+        "latitude": 39.6154024,
+        "longitude": 19.9103256
+      },
+      "description": "Boiler Food Bar is a casual food stop in the wider Corfu Town area represented in the source dataset as a fast-food venue with options such as burgers, crepes and sandwiches. It can function as a meal break when travel time and the user's requested schedule permit. The simplified data does not establish current menu availability, dietary guarantees, reservations or delivery. In the recruitment scenario its opening window is a synthetic planning constraint, not an operational claim about the business.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 45,
+      "opening_hours_fixture": {
+        "mon": "11:00-20:00",
+        "tue": "11:00-20:00",
+        "wed": "11:00-20:00",
+        "thu": "11:00-20:00",
+        "fri": "11:00-20:00",
+        "sat": "11:00-20:00",
+        "sun": "11:00-20:00"
+      },
+      "source_urls": [
+        "https://wolt.com/en/grc/kerkyra/restaurant/boiler-food-bar-corfu-kerk"
+      ],
+      "family_suitability_fixture": null,
+      "description_provenance": "Curated from supplied POI export and linked merchant listing; fixture schedule not derived from listing"
+    },
+    {
+      "id": "CF-025",
+      "name": "Greek Market Food",
+      "area": "Mantouki",
+      "category": "food",
+      "tags": [
+        "food",
+        "restaurant",
+        "lunch"
+      ],
+      "location": {
+        "latitude": 39.6230681,
+        "longitude": 19.9182486
+      },
+      "description": "Greek Market Food is represented in the supplied Corfu source as a restaurant near the wider central area. Its role in the example application is to offer a food stop that can be filtered separately from museums, squares and nature attractions. The exercise assumes an approximate meal duration and a sample timetable, but does not supply a verified menu, table availability or dietary certifications. The assistant should describe it only at the level supported by those fields.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 45,
+      "opening_hours_fixture": {
+        "mon": "11:30-19:00",
+        "tue": "11:30-19:00",
+        "wed": "11:30-19:00",
+        "thu": "11:30-19:00",
+        "fri": "11:30-19:00",
+        "sat": "11:30-19:00",
+        "sun": "11:30-19:00"
+      },
+      "source_urls": ["https://restaurantguru.com/Griechenmarkt-Essen-Corfu"],
+      "family_suitability_fixture": null,
+      "description_provenance": "Curated only from supplied POI export; no independent entity-specific web description verified"
+    },
+    {
+      "id": "CF-026",
+      "name": "Church of St. John the Baptist in Sternes",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "church",
+        "religion",
+        "venetian",
+        "heritage"
+      ],
+      "location": {
+        "latitude": 39.6243918,
+        "longitude": 19.9226013
+      },
+      "description": "The Church of Saint John the Baptist in Sternes stands on Nikiforou Theotoki Street in the Old Town. Its name is linked to the public water cisterns once found in a nearby small square; the site illustrates the relationship between religious buildings and everyday Venetian-period urban infrastructure. The church is associated with the development of the surrounding neighbourhood and preserves characteristic Ionian ecclesiastical architecture. Its interior cannot be promised to visitors without independently confirmed access hours.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 25,
+      "opening_hours_fixture": null,
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu",
+        "https://whc.unesco.org/en/list/978"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-027",
+      "name": "Gate of the Old Fortress",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "fortress",
+        "architecture",
+        "venetian",
+        "gate"
+      ],
+      "location": {
+        "latitude": 39.6234309,
+        "longitude": 19.9255947
+      },
+      "description": "The Gate of the Old Fortress lies between the Martinengo and Savorgnan bastions, at the entrance to the fortified promontory. It was historically approached across a moat; a later bridge replaced the earlier drawbridge, while the monumental entrance preserves traces of its defensive function. The gate is a useful short exterior architecture stop even when a full climb through the fortress is infeasible. It should not be counted as an additional 85-minute fortress tour.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 15,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://visit.corfu.gr/sights/old-fortress/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-028",
+      "name": "Ionian Academy (Grimani Barracks)",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "university",
+        "architecture",
+        "british",
+        "venetian"
+      ],
+      "location": {
+        "latitude": 39.6210022,
+        "longitude": 19.9238807
+      },
+      "description": "The Ionian Academy building began as Venetian-period military barracks, known as the Grimani Barracks, beside the southern part of Spianada. It later housed the Ionian Academy, established in 1824 and remembered as an early university of the modern Greek world. The building was badly damaged during the Second World War and subsequently restored; it is associated today with the Ionian University. For the exercise, this POI represents a short exterior stop rather than guaranteed access to offices or lecture rooms.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 20,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://ionio.gr/en/prospective/university-history/",
+        "https://interpass.corfuport.gr/ionian-academy-grimani-barracks/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-029",
+      "name": "Byzantine Museum (Antivouniotissa)",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "museum",
+        "religion",
+        "icons",
+        "byzantine"
+      ],
+      "location": {
+        "latitude": 39.6271946,
+        "longitude": 19.9225279
+      },
+      "description": "The Byzantine Museum is housed in the church of Panagia Antivouniotissa, an important example of Corfu's late medieval and post-Byzantine ecclesiastical architecture. Its collection includes portable icons from the fifteenth to nineteenth centuries and shows the importance of the island for Greek religious painting, including artists linked with the Cretan school. The building's church setting is part of the museum experience. It offers a substantial indoor alternative in rain, subject to the exercise's opening schedule.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 55,
+      "opening_hours_fixture": {
+        "mon": "09:00-16:00",
+        "tue": null,
+        "wed": "09:00-16:00",
+        "thu": "09:00-16:00",
+        "fri": "09:00-16:00",
+        "sat": "09:00-16:00",
+        "sun": "09:00-16:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://visit.corfu.gr/arts-culture/byzantine-museum-of-corfu/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-030",
+      "name": "Jewish Holocaust Memorial",
+      "area": "Mantouki",
+      "category": "history",
+      "tags": [
+        "memorial",
+        "jewish",
+        "world_war_ii",
+        "heritage"
+      ],
+      "location": {
+        "latitude": 39.6253171,
+        "longitude": 19.9184362
+      },
+      "description": "The Jewish Holocaust Memorial commemorates members of Corfu's Jewish community persecuted and deported during the German occupation in 1944. The Jewish Museum of Greece records the island's centuries-old Romaniote and other Jewish traditions and the destruction suffered by the community during the Second World War. This is an exterior site of remembrance, not a leisure attraction or substitute for an entertainment stop. Answers about it should use respectful, factual language and avoid unsupported numerical claims.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 20,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://jewishmuseum.gr/en/psifiaki-ekthesi/at-the-crossroads-the-jewish-community-of-corfu/",
+        "https://cja.huji.ac.il/hmm/browser.php?id=52329&mode=set"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-031",
+      "name": "Archaeological Museum of Corfu",
+      "area": "Mantouki",
+      "category": "history",
+      "tags": [
+        "museum",
+        "archaeology",
+        "artemis",
+        "gorgon"
+      ],
+      "location": {
+        "latitude": 39.6189037,
+        "longitude": 19.9219862
+      },
+      "description": "The Archaeological Museum of Corfu presents material from the ancient city and other sites on the island. Its most distinctive exhibit is the large Gorgon pediment from the Temple of Artemis, excavated in the area of ancient Palaiopolis. The collection also includes sculpture, pottery, coins and objects illustrating different periods of ancient Corfu. It is a focused indoor archaeology stop and should be selected over a general historical square when the user asks specifically for ancient artefacts.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 65,
+      "opening_hours_fixture": {
+        "mon": null,
+        "tue": "09:00-16:00",
+        "wed": "09:00-16:00",
+        "thu": "09:00-16:00",
+        "fri": "09:00-16:00",
+        "sat": "09:00-16:00",
+        "sun": "09:00-16:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://visit.corfu.gr/museums/archaeological-museum/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-032",
+      "name": "Liston Arcades",
+      "area": "Old Town of Corfu",
+      "category": "history",
+      "tags": [
+        "architecture",
+        "french",
+        "walking",
+        "cafe"
+      ],
+      "location": {
+        "latitude": 39.6238693,
+        "longitude": 19.9237176
+      },
+      "description": "Liston is the celebrated arcaded promenade facing Spianada Square in Corfu's Old Town. Its early nineteenth-century design reflects French influence, with a colonnaded street front frequently compared with Parisian urban architecture. The arches frame cafes and public strolling space, while the nearby square connects Liston to the town's fortification history and civic life. This POI is for the promenade itself; a cafe visit, if desired, should be scheduled as a separate food or rest stop.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 25,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://www.discovergreece.com/experiences/exploring-atmospheric-old-town-corfu",
+        "https://visit.corfu.gr/sights/spianada-square/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-033",
+      "name": "Spianada Square",
+      "area": "Old Town of Corfu",
+      "category": "nature",
+      "tags": [
+        "square",
+        "walking",
+        "open_space",
+        "architecture"
+      ],
+      "location": {
+        "latitude": 39.6230813,
+        "longitude": 19.9245342
+      },
+      "description": "Spianada is the main open square of Corfu Town, lying between the Old Fortress and the Liston arcades. The Venetians cleared part of this area for defensive purposes, and later generations shaped it into a public meeting ground and landscape. Today it links the Old Town's architecture, promenades, monuments and access toward the fortress. Its large outdoor expanse makes it suitable for a relaxed walking plan but not an equivalent rainy-day replacement for an indoor museum.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 30,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://visit.corfu.gr/sights/spianada-square/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-034",
+      "name": "Old Port of Corfu",
+      "area": "Old Town of Corfu",
+      "category": "nature",
+      "tags": [
+        "port",
+        "waterfront",
+        "walking",
+        "viewpoint"
+      ],
+      "location": {
+        "latitude": 39.6276504,
+        "longitude": 19.9203878
+      },
+      "description": "The Old Port of Corfu is part of the town's longstanding relationship with maritime trade and its defensive position near the entrance to the Adriatic. The harbour area sits below the New Fortress, connecting the historic waterfront with nearby pedestrian routes into the Old Town. In the exercise it serves as a short exterior viewpoint and walking stop. Cruise departures, ferry times, sailing availability and restricted quay access are outside the supplied knowledge base and must not be invented.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 25,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-035",
+      "name": "Anemomilos Grove",
+      "area": "Garitsa / Corfu Town",
+      "category": "nature",
+      "tags": [
+        "grove",
+        "walking",
+        "garitsa",
+        "waterfront"
+      ],
+      "location": {
+        "latitude": 39.610869,
+        "longitude": 19.9247689
+      },
+      "description": "Anemomilos Grove is a green stopping point in the Garitsa-side urban landscape, away from the densest historic streets. It can be combined with a longer promenade around Garitsa bay rather than inserted casually between two closely spaced Old Town museums. The area provides a change of scene for visitors wanting shade and a slower outdoor walk. Weather, user pace and the return journey should all influence whether it belongs in a three-hour itinerary.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 30,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-036",
+      "name": "Park of 25 March",
+      "area": "Old Town of Corfu",
+      "category": "nature",
+      "tags": [
+        "park",
+        "monument",
+        "green_space"
+      ],
+      "location": {
+        "latitude": 39.6209589,
+        "longitude": 19.9242253
+      },
+      "description": "The Park of 25 March is a small green public-space entry near the historic centre of Corfu. It can serve as a short pause during a walk linking civic buildings, monuments and neighbourhood streets. The exercise treats it as outdoor space rather than a staffed attraction, museum or venue with ticket availability. Its name is useful for a user seeking a particular landmark, but the assistant should not invent a special event or festival merely from the park's commemorative title.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 20,
+      "opening_hours_fixture": {
+        "mon": "00:00-24:00",
+        "tue": "00:00-24:00",
+        "wed": "00:00-24:00",
+        "thu": "00:00-24:00",
+        "fri": "00:00-24:00",
+        "sat": "00:00-24:00",
+        "sun": "00:00-24:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://visit.corfu.gr/experiences-of-corfu/the-landmarks/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-037",
+      "name": "Mandraki Marina",
+      "area": "Old Town of Corfu",
+      "category": "nature",
+      "tags": [
+        "marina",
+        "waterfront",
+        "fortress",
+        "viewpoint"
+      ],
+      "location": {
+        "latitude": 39.6246978,
+        "longitude": 19.9284073
+      },
+      "description": "Mandraki Marina lies alongside the northern side of the Old Fortress, reflecting the protected harbour's historic relationship with the fortified town. It provides views of boats, seawalls and the fortress from a different angle than Spianada. An itinerary should distinguish a visit to the marina from access to private boats, ferry services or a booked sailing activity. Reaching particular waterfront sections may require a different route from a simple straight-line distance, so timing estimates should remain approximate.",
+      "setting": "outdoor",
+      "suggested_visit_minutes": 25,
+      "opening_hours_fixture": null,
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://visit.corfu.gr/sights/old-fortress/",
+        "https://www.corfusailing.gr/en/sailing-club-harbor.html"
+      ],
+      "description_provenance": "Supplied POI export plus fortress and sailing club sources; public waterfront access UNVERIFIED"
+    },
+    {
+      "id": "CF-038",
+      "name": "Pane e Souvlaki",
+      "area": "Old Town of Corfu",
+      "category": "food",
+      "tags": [
+        "restaurant",
+        "greek",
+        "souvlaki",
+        "casual"
+      ],
+      "location": {
+        "latitude": 39.6236904,
+        "longitude": 19.9224468
+      },
+      "description": "Pane e Souvlaki is a casual Greek dining option by Town Hall Square in Corfu's Old Town. The business describes a menu built around souvlaki, grilled dishes, salads and other Greek food, making it relevant to a visitor who requests a meal break close to central sightseeing. Its location allows a short itinerary to pair dining with the former town hall or surrounding architectural streets. The test schedule and meal duration are exercise assumptions; a recommendation does not imply a reserved table.",
+      "setting": "mixed",
+      "suggested_visit_minutes": 50,
+      "opening_hours_fixture": {
+        "mon": "11:30-21:00",
+        "tue": "11:30-21:00",
+        "wed": "11:30-21:00",
+        "thu": "11:30-21:00",
+        "fri": "11:30-21:00",
+        "sat": "11:30-21:00",
+        "sun": "11:30-21:00"
+      },
+      "family_suitability_fixture": true,
+      "source_urls": [
+        "https://www.panesouvlaki.com/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-039",
+      "name": "Taverna Rouvas",
+      "area": "Mantouki",
+      "category": "food",
+      "tags": [
+        "restaurant",
+        "greek",
+        "corfiot",
+        "traditional"
+      ],
+      "location": {
+        "latitude": 39.6227003,
+        "longitude": 19.9192667
+      },
+      "description": "Taverna Rouvas is a traditional family-run restaurant in Corfu Town with a longstanding focus on Greek and Corfiot cooked dishes. Its own material highlights classics such as pastitsada, sofrito and other home-style preparations. This makes it relevant to a user asking for local food rather than an unspecified international restaurant. The sample includes a daytime dining window so a planner must not assign a late-evening meal merely because nearby nightlife venues remain open.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 55,
+      "opening_hours_fixture": {
+        "mon": "11:00-17:00",
+        "tue": "11:00-17:00",
+        "wed": "11:00-17:00",
+        "thu": "11:00-17:00",
+        "fri": "11:00-17:00",
+        "sat": "11:00-17:00",
+        "sun": null
+      },
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://www.rouvasrestaurant.com/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-040",
+      "name": "Mikro Café",
+      "area": "Old Town of Corfu",
+      "category": "food",
+      "tags": [
+        "cafe",
+        "coffee",
+        "old_town",
+        "break"
+      ],
+      "location": {
+        "latitude": 39.624765,
+        "longitude": 19.9212856
+      },
+      "description": "Mikro Café is a cafe and bar in the lanes of Corfu's Old Town, identified in the supplied source near Themistokleous Kotardou Street. It offers a flexible coffee or drinks break within a compact walking route, contrasting with the longer duration expected for a sit-down restaurant. Visitors' accounts describe outdoor seating and a small courtyard-like setting, but specific seat availability cannot be guaranteed. For weather replanning, a cafe should not automatically be treated as an entirely indoor refuge.",
+      "setting": "mixed",
+      "suggested_visit_minutes": 30,
+      "opening_hours_fixture": {
+        "mon": "09:00-20:00",
+        "tue": "09:00-20:00",
+        "wed": "09:00-20:00",
+        "thu": "09:00-20:00",
+        "fri": "09:00-20:00",
+        "sat": "09:00-20:00",
+        "sun": "09:00-20:00"
+      },
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://www.tripadvisor.com/Restaurant_Review-g662629-d8418192-Reviews-Mikro_Cafe-Corfu_Town_Corfu_Ionian_Islands.html"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-041",
+      "name": "Chin Chin Café",
+      "area": "Old Town of Corfu",
+      "category": "food",
+      "tags": [
+        "cafe",
+        "breakfast",
+        "coffee",
+        "snack"
+      ],
+      "location": {
+        "latitude": 39.6236534,
+        "longitude": 19.9214999
+      },
+      "description": "Chin Chin Café appears in the supplied Corfu POI records as a central cafe serving coffee and lighter breakfast or snack options. Its tags include breakfast, pancakes and sandwiches, supporting a different user intent from a formal local-cuisine lunch. It can fill a short rest interval between heritage stops without requiring the full duration of a restaurant meal. The record supplies no independently verified menu or seating inventory; the fixture timetable is only for the exercise.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 35,
+      "opening_hours_fixture": {
+        "mon": "08:30-19:00",
+        "tue": "08:30-19:00",
+        "wed": "08:30-19:00",
+        "thu": "08:30-19:00",
+        "fri": "08:30-19:00",
+        "sat": "08:30-19:00",
+        "sun": "08:30-19:00"
+      },
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://www.facebook.com/chinchincorfu/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-042",
+      "name": "Fegaropetra Seafood",
+      "area": "Garitsa / Corfu Town",
+      "category": "food",
+      "tags": [
+        "restaurant",
+        "seafood",
+        "mediterranean",
+        "garitsa"
+      ],
+      "location": {
+        "latitude": 39.6105755,
+        "longitude": 19.9269942
+      },
+      "description": "Fegaropetra is a seafood and Mediterranean restaurant in the Garitsa bay area of Corfu Town. Its own site describes a family-run venue focused on fish, seafood and Greek ingredients, with the sea and Old Fortress forming part of the surrounding landscape. A visit fits a longer Garitsa promenade or a plan that includes the waterfront, rather than an Old Town circuit with no time to leave the central lanes. Food availability and seating are not live fields in the dataset.",
+      "setting": "mixed",
+      "suggested_visit_minutes": 60,
+      "opening_hours_fixture": {
+        "mon": "12:00-21:00",
+        "tue": "12:00-21:00",
+        "wed": "12:00-21:00",
+        "thu": "12:00-21:00",
+        "fri": "12:00-21:00",
+        "sat": "12:00-21:00",
+        "sun": "12:00-21:00"
+      },
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://fegaropetra-seafood.com/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-043",
+      "name": "Avli Restaurant Corfu",
+      "area": "Garitsa / Corfu Town",
+      "category": "food",
+      "tags": [
+        "restaurant",
+        "greek",
+        "mediterranean",
+        "garitsa"
+      ],
+      "location": {
+        "latitude": 39.6108758,
+        "longitude": 19.9225247
+      },
+      "description": "Avli is a Greek restaurant by Garitsa Grove whose official description emphasizes traditional recipes, meze, meat and seafood. Its garden setting and views toward the bay provide a reason to pair it with a southern waterfront walk rather than an Old Town museum cluster. The user may prefer its local-cuisine emphasis to a quick sandwich stop; that choice still has to fit the available time and transport mode. Indoor versus outdoor seating is not guaranteed by the simplified fixture.",
+      "setting": "mixed",
+      "suggested_visit_minutes": 60,
+      "opening_hours_fixture": {
+        "mon": "12:00-21:00",
+        "tue": "12:00-21:00",
+        "wed": "12:00-21:00",
+        "thu": "12:00-21:00",
+        "fri": "12:00-21:00",
+        "sat": "12:00-21:00",
+        "sun": "12:00-21:00"
+      },
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://avlicorfu.com/about-us/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-044",
+      "name": "Maridaki Seafood Restaurant",
+      "area": "Garitsa / Corfu Town",
+      "category": "food",
+      "tags": [
+        "restaurant",
+        "seafood",
+        "greek",
+        "garitsa"
+      ],
+      "location": {
+        "latitude": 39.6106126,
+        "longitude": 19.9238697
+      },
+      "description": "Maridaki Psarofageion is a seafood restaurant in the Garitsa area of Corfu Town. Its own information focuses on fish and other seafood prepared within a Greek coastal dining tradition, with the surrounding park and Old Fortress helping define the location. It offers another meal option in the southern part of town so that preference and proximity filters have real alternatives. Its exercise opening hours do not represent a live reservation or an assurance about the current menu.",
+      "setting": "mixed",
+      "suggested_visit_minutes": 60,
+      "opening_hours_fixture": {
+        "mon": "12:00-21:00",
+        "tue": "12:00-21:00",
+        "wed": "12:00-21:00",
+        "thu": "12:00-21:00",
+        "fri": "12:00-21:00",
+        "sat": "12:00-21:00",
+        "sun": "12:00-21:00"
+      },
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://maridaki.com/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-045",
+      "name": "Lotos / Alcia Art Space",
+      "area": "Old Town of Corfu",
+      "category": "local_market",
+      "tags": [
+        "art",
+        "studio",
+        "painting",
+        "shopping"
+      ],
+      "location": {
+        "latitude": 39.6251,
+        "longitude": 19.921665
+      },
+      "description": "Lotos / Alcia Art Space is a small artist-run studio and exhibition space in Corfu Town associated with painter Aleka Lampiri. The artist's own site describes paintings and a workspace used for personal artistic production and exhibitions, making it relevant to visitors interested in contemporary local art and shopping. It is not equivalent to the Municipal Art Gallery's museum collection. No confirmed visitor timetable is supplied for this fixture, so the assistant must not guarantee walk-in access.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 30,
+      "opening_hours_fixture": null,
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://alcia.gr/about/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-046",
+      "name": "Ilios Jewellery Workshop",
+      "area": "Agios Georgios",
+      "category": "local_market",
+      "tags": [
+        "jewellery",
+        "craft",
+        "shopping",
+        "workshop",
+        "outside_centre"
+      ],
+      "location": {
+        "latitude": 39.7157789,
+        "longitude": 19.6816282
+      },
+      "description": "Ilios is represented in the Corfu source data as a jewellery-related workshop or shop in the Agios Georgios Pagon area, well beyond the Old Town. An independent area guide describes jewellery-making workshops and an exhibition room connected with local goldsmithing. It can test whether the assistant distinguishes an artisan-shopping excursion from a city-centre souvenir stop. Workshop places, prices, opening status and transport connections must not be invented; the dataset deliberately has no confirmed schedule.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 40,
+      "opening_hours_fixture": null,
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://corfu.apartments/en/corfu/agios-georgios-pagon?i=sun_fun_club_006"
+      ],
+      "description_provenance": "Supplied POI export plus area guide; exact workshop identity and current operation UNVERIFIED"
+    },
+    {
+      "id": "CF-047",
+      "name": "Perdita's Glass Art",
+      "area": "Agios Stefanos",
+      "category": "local_market",
+      "tags": [
+        "glass",
+        "craft",
+        "shopping",
+        "outside_centre"
+      ],
+      "location": {
+        "latitude": 39.7543769,
+        "longitude": 19.6430087
+      },
+      "description": "Perdita's Glass Art is a craft-shop listing associated with Agios Stefanos Avliotes in north-west Corfu. Visitor-directory material describes stained-glass work and small decorative pieces, including jewellery and objects that combine glass with reused materials. The place offers a different local-market category from the central galleries and soap workshop, but it is far from Corfu Town. Older public information raises uncertainty about current operation, so the assistant must not present the fixture as proof the business is open today.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 35,
+      "opening_hours_fixture": null,
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://www.tripadvisor.com/Attraction_Review-g775838-d14091086-Reviews-Perditas_Glass_Art-Agios_Stefanos_Avliotes_Corfu_Ionian_Islands.html"
+      ],
+      "description_provenance": "Supplied POI export plus older third-party directory; current business operation UNVERIFIED"
+    },
+    {
+      "id": "CF-048",
+      "name": "Iznogood Beerock Bar",
+      "area": "Old Town of Corfu",
+      "category": "nightlife",
+      "tags": [
+        "bar",
+        "rock",
+        "music",
+        "nightlife"
+      ],
+      "location": {
+        "latitude": 39.6234654,
+        "longitude": 19.9194479
+      },
+      "description": "Iznogood Beerock Bar is a rock-oriented bar in Corfu's Old Town. Public business listings and visitor accounts associate it with beer and music rather than the quiet atmosphere of a daytime cafe. In the exercise it is an evening nightlife option, not a family sightseeing destination or a lunch venue. Its fixture closes after midnight; a scheduling implementation should handle a time interval that crosses into the following calendar day rather than interpreting 02:00 as earlier than 20:00.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 60,
+      "opening_hours_fixture": {
+        "mon": "20:00-02:00",
+        "tue": "20:00-02:00",
+        "wed": "20:00-02:00",
+        "thu": "20:00-02:00",
+        "fri": "20:00-02:00",
+        "sat": "20:00-02:00",
+        "sun": "20:00-02:00"
+      },
+      "family_suitability_fixture": false,
+      "source_urls": [
+        "https://www.xo.gr/profile/profile-911503750/en/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-049",
+      "name": "Eraldikon Bar",
+      "area": "Old Town of Corfu",
+      "category": "nightlife",
+      "tags": [
+        "bar",
+        "rock",
+        "music",
+        "nightlife"
+      ],
+      "location": {
+        "latitude": 39.6241609,
+        "longitude": 19.9195851
+      },
+      "description": "Eraldikon is listed as a bar on Agias Sofias Street in Corfu's Old Town, with public local-guide descriptions emphasizing rock music and an alternative atmosphere. It adds a second music-oriented evening option so that the recommender has a genuine category choice instead of a single hard-coded nightlife result. It should not be included in a three-hour family walking itinerary unless the user explicitly requests that kind of stop. Its example timetable crosses midnight and is not a live operating-hours claim.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 60,
+      "opening_hours_fixture": {
+        "mon": "20:00-02:00",
+        "tue": "20:00-02:00",
+        "wed": "20:00-02:00",
+        "thu": "20:00-02:00",
+        "fri": "20:00-02:00",
+        "sat": "20:00-02:00",
+        "sun": "20:00-02:00"
+      },
+      "family_suitability_fixture": false,
+      "source_urls": [
+        "https://corfugreece.gr/item/eraldikon-mpar/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    },
+    {
+      "id": "CF-050",
+      "name": "Municipal and Regional Theatre of Corfu",
+      "area": "Mantouki",
+      "category": "nightlife",
+      "tags": [
+        "theatre",
+        "performance",
+        "culture",
+        "nightlife"
+      ],
+      "location": {
+        "latitude": 39.6218745,
+        "longitude": 19.9199754
+      },
+      "description": "The Municipal and Regional Theatre of Corfu (DIPETHEK) is a cultural organisation involved in professional theatre productions and community-related activities. Its history is connected to the island's long theatrical tradition, including the former San Giacomo opera venue and later municipal theatre. This POI represents a performance-oriented cultural destination rather than an attraction that is automatically visitable throughout the day. Because no event programme or ticketing feed is supplied, performance availability must be treated as unknown.",
+      "setting": "indoor",
+      "suggested_visit_minutes": 90,
+      "opening_hours_fixture": null,
+      "family_suitability_fixture": null,
+      "source_urls": [
+        "https://dipethek.gr/en/history/?lang=en",
+        "https://dipethek.gr/en/theater-in-corfu/"
+      ],
+      "description_provenance": "Curated from supplied POI export and linked background references"
+    }
+  ]
+}
