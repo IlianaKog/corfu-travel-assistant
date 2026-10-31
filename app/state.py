@@ -32,6 +32,8 @@ class Preferences(BaseModel):
     with_child: bool = False
     child_age: int | None = None
     excluded_poi_ids: list[str] = Field(default_factory=list)
+    # Places the visitor asked for by name; later changes keep them while they still fit.
+    named_places: list[str] = Field(default_factory=list)
     # Set once the plan has been checked against the weather, so later changes keep avoiding rain.
     consider_weather: bool = False
     # No stop count here: "five museums" belongs to one request, not to the visitor.
@@ -44,7 +46,7 @@ class Preferences(BaseModel):
         if self.date is None or self.start is None or self.end is None:
             missing = [n for n in ("date", "start", "end") if getattr(self, n) is None]
             raise ValueError(f"missing {', '.join(missing)}: ask the visitor, or pass it explicitly")
-        data = self.model_dump(exclude_none=True, exclude={"consider_weather"})
+        data = self.model_dump(exclude_none=True, exclude={"consider_weather", "named_places"})
         data.update({k: v for k, v in overrides.items() if v is not None})
         return PlanConstraints(**data)
 

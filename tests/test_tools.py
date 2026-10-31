@@ -341,6 +341,35 @@ def test_indoor_stops_kept_by_the_rain_survive_an_outdoor_preference(deps):
     assert "indoor" in [st.setting.value for st in s.itinerary.stops] and not _rain_exposed(s.itinerary)
 
 
+def test_a_replaced_stop_does_not_come_back(deps):
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-06", start_time="11:00", end_time="15:00", interests=["history"])
+    replaced = s.itinerary.poi_ids()[1]
+    call(s, deps, "replace_stop", stop_number=2)
+    call(s, deps, "revise_itinerary", end_time="14:30")
+    assert replaced in s.preferences.excluded_poi_ids and replaced not in s.itinerary.poi_ids()
+
+
+def test_places_named_by_the_visitor_survive_later_changes(deps):
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-08", start_time="10:00", end_time="13:30",
+         must_include_places=["Liston Arcades", "Old Fortress", "Town Hall Square"])
+    out = call(s, deps, "revise_itinerary", with_child=True)
+    # Old Fortress is not confirmed as family-suitable: dropped, and said so once
+    assert [n for n in out.data["notes"] if "Old Fortress" in n] == ["Old Fortress no longer fits the constraints: not confirmed as family-suitable in the dataset."]
+    call(s, deps, "revise_itinerary", start_time="10:30")
+    assert {"CF-032", "CF-016"} <= set(s.itinerary.poi_ids())
+
+
+def test_naming_a_place_again_lifts_its_exclusion(deps):
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-08", start_time="10:00", end_time="13:30", interests=["history"])
+    call(s, deps, "revise_itinerary", remove_places=["Old Fortress"])
+    assert "CF-001" in s.preferences.excluded_poi_ids
+    call(s, deps, "plan_itinerary", must_include_places=["Old Fortress"])
+    assert "CF-001" not in s.preferences.excluded_poi_ids and "CF-001" in s.itinerary.poi_ids()
+
+
 def test_weather_unavailable_keeps_plan(deps):
     s = SessionState()  # live provider replaced by NoWeather
     call(s, deps, "plan_itinerary", date="2026-10-07", start_time="13:00", end_time="17:00", interests=["history"])

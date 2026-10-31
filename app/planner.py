@@ -26,6 +26,7 @@ W_VISIT_MIN = 0.08
 W_WALK_MIN = 0.15
 W_WAIT_MIN = 0.10
 W_KEEP = 4.0
+W_NAMED = 30.0  # a place the visitor named outweighs any unrequested stop
 BEAM_WIDTH = 60
 MAX_REQUIRED_STOPS = 7
 
@@ -113,13 +114,15 @@ def schedule(pois: list[POI], ctx: Context) -> tuple[list[Stop], Step | None]:
     return stops, None
 
 
-def value(stops: list[Stop], scores: Mapping[str, float], keep: set[str] = frozenset()) -> float:
+def value(stops: list[Stop], scores: Mapping[str, float], keep: set[str] = frozenset(), named: set[str] = frozenset()) -> float:
     v = 0.0
     for s in stops:
         v += W_RELEVANCE * scores.get(s.poi_id, 0.0) + W_VISIT_MIN * s.visit_minutes
         v -= W_WALK_MIN * s.walk_minutes + W_WAIT_MIN * s.wait_minutes
         if s.poi_id in keep:
             v += W_KEEP
+        if s.poi_id in named:
+            v += W_NAMED
     return v
 
 
@@ -137,12 +140,13 @@ def beam_search(
     max_stops: int,
     prefix: list[POI] | None = None,
     keep: set[str] = frozenset(),
+    named: set[str] = frozenset(),
 ) -> _Node:
     prefix = prefix or []
     prefix_stops, failed = schedule(prefix, ctx)
     if failed:
         raise ValueError(f"prefix cannot be scheduled: {failed.reason}")
-    root = _Node(tuple(prefix), tuple(prefix_stops), value(prefix_stops, scores, keep))
+    root = _Node(tuple(prefix), tuple(prefix_stops), value(prefix_stops, scores, keep, named))
     best, frontier = root, [root]
     while frontier:
         expanded: dict[tuple, _Node] = {}
@@ -159,7 +163,7 @@ def beam_search(
                 if step.stop is None:
                     continue
                 stops = node.stops + (step.stop,)
-                child = _Node(node.pois + (poi,), stops, value(list(stops), scores, keep))
+                child = _Node(node.pois + (poi,), stops, value(list(stops), scores, keep, named))
                 key = (frozenset(used | {poi.id}), poi.id)
                 if key not in expanded or child.value > expanded[key].value:
                     expanded[key] = child
@@ -323,7 +327,8 @@ def _replacement_diagnosis(removed: POI, others: list[POI], pool: list[POI], c: 
 
 
 def adapt_to_weather(
-    itin: Itinerary, c: PlanConstraints, repo: POIRepository, scores: Mapping[str, float], rain: RainWindows
+    itin: Itinerary, c: PlanConstraints, repo: POIRepository, scores: Mapping[str, float], rain: RainWindows,
+    named: set[str] = frozenset(),
 ) -> PlanResult:
     """Revise a plan so no exposed (outdoor/mixed) stop falls in forecast rain,
     keeping the original time window. Reorders first; replaces only if needed."""
@@ -344,7 +349,7 @@ def adapt_to_weather(
         for order in permutations(current):
             stops, failed = schedule(list(order), ctx)
             if not failed:
-                v = value(stops, scores, keep)
+                v = value(stops, scores, keep, named)
                 if best_order is None or v > best_order[0]:
                     best_order = (v, stops)
         if best_order:
@@ -362,20 +367,28 @@ def adapt_to_weather(
     prefix = current[: len(prefix_stops)]
     pool = [p for p in candidates(repo.all(), relaxed, scores) if p.hours_known]
     pool += [p for p in current if p not in pool]
-    best = beam_search(pool, scores, ctx, c.stop_limit, prefix=prefix, keep=keep)
+    best = beam_search(pool, scores, ctx, c.stop_limit, prefix=prefix, keep=keep, named=named)
     new = _itinerary(c, best.stops)
     old_ids, new_ids = set(itin.poi_ids()), set(new.poi_ids())
+    notes += _named_notes(named & old_ids, new_ids, repo, already_noted=set())
     changes = [f"Removed {repo.get(i).name} ({i})." for i in itin.poi_ids() if i not in new_ids]
     changes += [f"Added {s.name} ({s.poi_id}), {s.setting.value}." for s in new.stops if s.poi_id not in old_ids]
     changes += _retime_changes(itin, new)
     return PlanResult(status="ok" if new.stops else "infeasible", itinerary=new, validation=validate(new, relaxed, repo, rain), notes=notes, changes=changes)
 
 
+def _named_notes(named: set[str], new_ids: set[str], repo: POIRepository, already_noted: set[str]) -> list[str]:
+    return [f"{repo.get(i).name}, which the visitor asked for by name, could not be kept within the new constraints."
+            for i in sorted(named - new_ids - already_noted)]
+
+
 def replan_preserving(
-    itin: Itinerary, c: PlanConstraints, repo: POIRepository, scores: Mapping[str, float], rain: RainWindows | None = None
+    itin: Itinerary, c: PlanConstraints, repo: POIRepository, scores: Mapping[str, float], rain: RainWindows | None = None,
+    named: set[str] = frozenset(),
 ) -> PlanResult:
     """Apply changed constraints (window, exclusions, child, interests) to an
-    existing plan, keeping the stops that still satisfy them where possible."""
+    existing plan, keeping the stops that still satisfy them where possible;
+    places the visitor named are kept first."""
     ctx = Context.from_constraints(c, rain)
     current = [repo.get(i) for i in itin.poi_ids()]
     still_allowed = [p for p in current if constraint_violation(p, c) is None and (not c.categories or p.category in c.categories)]
@@ -391,13 +404,14 @@ def replan_preserving(
     pool = [p for p in candidates(repo.all(), c, scores) if p.hours_known]
     pool += [p for p in still_allowed if p not in pool]
     keep = {p.id for p in still_allowed}
-    best = beam_search(pool, scores, Context.from_constraints(c, rain, reserve=True), c.stop_limit, keep=keep)
+    best = beam_search(pool, scores, Context.from_constraints(c, rain, reserve=True), c.stop_limit, keep=keep, named=named)
     if not best.stops:
-        best = beam_search(pool, scores, ctx, c.stop_limit, keep=keep)
+        best = beam_search(pool, scores, ctx, c.stop_limit, keep=keep, named=named)
     if not best.stops:
         return PlanResult(status="infeasible", itinerary=itin, notes=[*notes, "Nothing fits the new constraints; the previous itinerary is unchanged."])
     new = _itinerary(c, best.stops)
     old_ids, new_ids = set(itin.poi_ids()), set(new.poi_ids())
+    notes += _named_notes(named, new_ids, repo, already_noted={p.id for p in current if p not in still_allowed})
     changes = [f"Kept {repo.get(i).name}." for i in itin.poi_ids() if i in new_ids]
     changes += [f"Removed {repo.get(i).name} ({i})." for i in itin.poi_ids() if i not in new_ids]
     changes += [f"Added {s.name} ({s.poi_id})." for s in new.stops if s.poi_id not in old_ids]

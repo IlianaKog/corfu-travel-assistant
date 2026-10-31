@@ -492,6 +492,9 @@ def plan_itinerary(state: SessionState, args: PlanArgs, deps: Deps) -> ToolOutpu
             return ToolOutput({"status": "needs_clarification", "unresolved": problems,
                                "guidance": "Tell the visitor which names are not in the dataset (or are ambiguous). Do not substitute or invent places."})
         required = [p.id for p in found]
+    # a new plan replaces the named places; naming a place again lifts an earlier exclusion of it
+    prefs.named_places = required
+    prefs.excluded_poi_ids = [i for i in prefs.excluded_poi_ids if i not in required]
 
     try:
         c = prefs.to_constraints(required_poi_ids=required or None, max_stops=args.max_stops)
@@ -519,7 +522,12 @@ def replace_stop(state: SessionState, args: ReplaceArgs, deps: Deps) -> ToolOutp
         return ToolOutput({"error": str(err)})
     c, rain, extra = _with_weather(deps, state, c)
     scores = scores_for(deps, ranking_terms(c))
+    replaced = state.itinerary.poi_ids()[args.stop_number - 1] if args.stop_number <= len(state.itinerary.stops) else None
     result = planner.replace_stop(state.itinerary, args.stop_number - 1, c, deps.repo, scores, rain)
+    if result.status == "ok" and replaced:
+        # the visitor asked to swap it out, so later changes must not bring it back
+        prefs.excluded_poi_ids = _union(prefs.excluded_poi_ids, [replaced])
+        prefs.named_places = [i for i in prefs.named_places if i != replaced]
     return _weather_output(_plan_output(state, result, extra), extra)
 
 
@@ -537,13 +545,15 @@ def revise_itinerary(state: SessionState, args: ReviseArgs, deps: Deps) -> ToolO
         if problems:
             return ToolOutput({"status": "needs_clarification", "unresolved": problems})
         prefs.excluded_poi_ids = _union(prefs.excluded_poi_ids, [p.id for p in found])
+        prefs.named_places = [i for i in prefs.named_places if i not in prefs.excluded_poi_ids]
     try:
         c = prefs.to_constraints(max_stops=args.max_stops)
     except ValueError as err:
         return ToolOutput({"error": str(err)})
     state.preferences = prefs
     c, rain, extra = _with_weather(deps, state, c)
-    result = planner.replan_preserving(state.itinerary, c, deps.repo, scores_for(deps, ranking_terms(c)), rain)
+    result = planner.replan_preserving(state.itinerary, c, deps.repo, scores_for(deps, ranking_terms(c)), rain,
+                                       named=set(prefs.named_places))
     return _with_time_notices(_weather_output(_plan_output(state, result, extra), extra), state, c)
 
 
@@ -561,7 +571,8 @@ def adapt_plan_to_weather(state: SessionState, args: AdaptWeatherArgs, deps: Dep
                            "guidance": "Say the forecast is unavailable; keep the plan; do not guess the weather."})
     weather = forecast_facts(report, state.itinerary.window_start, state.itinerary.window_end)
     state.preferences.consider_weather = True
-    result = planner.adapt_to_weather(state.itinerary, c, deps.repo, scores_for(deps, ranking_terms(c)), report.rain_windows())
+    result = planner.adapt_to_weather(state.itinerary, c, deps.repo, scores_for(deps, ranking_terms(c)), report.rain_windows(),
+                                      named=set(state.preferences.named_places))
     out = _plan_output(state, result, {"weather": weather})
     out.weather_source = report.source
     return out
