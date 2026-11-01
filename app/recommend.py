@@ -24,6 +24,8 @@ INTEREST_VOCAB: dict[str, dict[str, set[str]]] = {
     "architecture": {"categories": set(), "tags": {"architecture", "palace", "square"}},
     "religion": {"categories": set(), "tags": {"religion", "church"}},
     "nature": {"categories": {"nature"}, "tags": {"park", "garden", "grove", "green_space", "waterfront"}},
+    # Gardens are not all of nature: under "nature", Faliraki Waterfront counted as covering "also gardens" (E5).
+    "garden": {"categories": {"nature"}, "tags": {"park", "garden", "grove", "green_space"}},
     "view": {"categories": set(), "tags": {"viewpoint", "waterfront"}},
     "food": {"categories": {"food"}, "tags": {"restaurant", "food", "cafe", "lunch"}},
     "shopping": {"categories": {"local_market"}, "tags": {"shopping", "craft", "local_market"}},
@@ -41,7 +43,7 @@ _ALIASES = {
     "museums": "museum", "gallery": "museum", "galleries": "museum", "exhibition": "museum",
     "arts": "art", "painting": "art", "paintings": "art", "artistic": "art",
     "church": "religion", "churches": "religion", "religious": "religion",
-    "park": "nature", "parks": "nature", "garden": "nature", "gardens": "nature", "green": "nature",
+    "park": "garden", "parks": "garden", "gardens": "garden", "green": "nature",
     "outdoors": "nature", "outdoor": "nature", "open": "nature", "views": "view", "viewpoint": "view", "scenic": "view", "sea": "view",
     "eat": "food", "lunch": "food", "dinner": "food", "restaurant": "food", "cafe": "food", "coffee": "food",
     "shop": "shopping", "shops": "shopping", "crafts": "shopping", "souvenirs": "shopping",
