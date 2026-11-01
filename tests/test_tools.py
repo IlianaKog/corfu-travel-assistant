@@ -6,6 +6,7 @@ import json
 import pytest
 
 from app.config import RAIN_FIXTURE_PATH
+from app.recommend import canonical_interests
 from app.state import SessionState
 from app.tools import Deps, openai_tool_specs, run_tool
 from app.weather import FixtureProvider, WeatherUnavailable, load_fixture, overlaps
@@ -162,6 +163,30 @@ def test_categories_without_interests_still_rank_by_topic(deps):
     assert s.itinerary.poi_ids() == with_interests.itinerary.poi_ids()
 
 
+@pytest.mark.parametrize("interests", [None, ["history"], ["historical"], ["historical attractions"], ["historic sites"]])
+def test_equivalent_phrasings_of_an_interest_give_the_same_plan(deps, interests):
+    """Seen with two models on scenario B: Gemini sent no interests, gpt-oss sent
+    'historical', and the plans differed in their short stops."""
+    reference = SessionState()
+    call(reference, deps, "plan_itinerary", date="2026-10-06", start_time="11:00", end_time="15:00", categories=["history"])
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-06", start_time="11:00", end_time="15:00", categories=["history"],
+         **({"interests": interests} if interests else {}))
+    assert s.itinerary.poi_ids() == reference.itinerary.poi_ids()
+
+
+@pytest.mark.parametrize("given, expected", [
+    (["historical attractions"], ["history"]),
+    (["art", "museums"], ["art", "museum"]),
+    (["Venetian history and fortresses"], ["venetian", "history"]),
+    (["parks and gardens"], ["nature"]),
+    (["Gorgon pediment"], ["Gorgon pediment"]),  # outside the vocabulary: kept for the semantic score
+    (["Byzantine icons"], ["Byzantine icons"]),
+])
+def test_canonical_interests_keep_detail_outside_the_vocabulary(given, expected):
+    assert canonical_interests(given) == expected
+
+
 def test_outdoor_wish_in_interests_filters_by_setting(deps):
     s = SessionState()
     call(s, deps, "plan_itinerary", date="2026-10-07", start_time="13:00", end_time="17:00", interests=["outdoor historical attractions"])
@@ -298,6 +323,21 @@ def test_tool_schema_steers_topics_to_interests():
     assert "Too broad on its own" in plan["categories"]["description"]
 
 
+def test_child_and_exclusions_are_steered_to_be_stored_even_when_the_plan_complies():
+    """Seen in the gpt-oss eval run: E5 dropped 'skip museums', E6 never stored the child."""
+    for spec in openai_tool_specs():
+        props = spec["function"]["parameters"]["properties"]
+        if "with_child" in props:
+            assert "even if the current stops already suit children" in props["with_child"]["description"]
+            assert "even if no current stop has it" in props["exclude_tags"]["description"]
+
+
+def test_replacement_topic_is_steered_away_from_child_suitability():
+    """Seen live: 'suitable for my 10-year-old' was sent as a replacement interest."""
+    replace = next(t for t in openai_tool_specs() if t["function"]["name"] == "replace_stop")["function"]["parameters"]["properties"]
+    assert "Suitability for a child goes in with_child, not here" in replace["interests"]["description"]
+
+
 def test_weather_tools_steer_away_from_a_redundant_forecast_call():
     specs = {t["function"]["name"]: t["function"]["description"] for t in openai_tool_specs()}
     assert "do not call get_weather first" in specs["adapt_plan_to_weather"]
@@ -406,6 +446,17 @@ def test_an_earlier_end_drops_as_few_stops_as_possible(deps):
     assert "CF-001" in after and len(set(before) - set(after)) == 1  # one stop dropped, the Old Fortress kept
     assert [i for i in before if i in after] == after  # the kept stops stay in their order
     assert out.data["validation"]["ok"] and s.itinerary.finish.strftime("%H:%M") <= "14:30"
+
+
+def test_an_earlier_end_keeps_the_most_relevant_time_not_the_most_stops(deps):
+    """Seen in the gpt-oss eval run (E5): ending an hour earlier dropped the New Fortress,
+    the most relevant stop for a Venetian visitor, to keep five short stops."""
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-10", start_time="09:30", end_time="13:30", categories=["history", "nature"],
+         interests=["Venetian", "views"], settings=["outdoor", "mixed"])
+    assert "CF-002" in s.itinerary.poi_ids()
+    out = call(s, deps, "revise_itinerary", end_time="12:30", exclude_tags=["museum"])
+    assert "CF-002" in s.itinerary.poi_ids() and out.data["validation"]["ok"]
 
 
 def test_places_named_by_the_visitor_survive_later_changes(deps):

@@ -174,7 +174,11 @@ class PlanArgs(BaseModel):
 
 class ReplaceArgs(BaseModel):
     stop_number: int = Field(ge=1, description="1-based position of the stop to replace.")
-    interests: list[str] | None = Field(default=None, description="What the replacement should be, in the visitor's words, e.g. ['park'], ['museum'].")
+    # Seen live: "something suitable for my 10-year-old" was sent as interests=["suitable for children"],
+    # so the replacement was ranked by that phrase instead of the plan's topic.
+    interests: list[str] | None = Field(default=None, description=(
+        "Only a topic for the replacement, in the visitor's words, e.g. ['park'], ['museum']. Leave empty to keep the "
+        "plan's interests. Suitability for a child goes in with_child, not here."))
     settings: list[Setting] | None = Field(default=None, description="Allowed settings for the replacement only.")
     categories: list[Category] | None = Field(default=None, description=CATEGORIES_DOC)
     exclude_tags: list[str] | None = Field(default=None, description=EXCLUDE_DOC)
