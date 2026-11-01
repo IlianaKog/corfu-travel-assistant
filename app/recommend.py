@@ -88,6 +88,31 @@ def split_setting_words(interests: list[str] | None) -> tuple[list[str] | None, 
     return rest, list(dict.fromkeys(settings))
 
 
+# Words that name no topic: "historical attractions" is just "history".
+_FILLER_WORDS = {"a", "an", "and", "the", "of", "some", "main", "famous", "interesting", "local", "corfu",
+                 "attraction", "attractions", "site", "sites", "place", "places", "thing", "things",
+                 "spot", "spots", "sight", "sights", "landmark", "landmarks"}
+
+
+def canonical_interests(interests: list[str]) -> list[str]:
+    """Map phrasings that differ only in word form or filler onto vocabulary
+    terms, so equivalent requests rank alike. Seen with two models: Gemini sent
+    no interests (ranked as "history"), gpt-oss sent "historical", and the
+    raw-text parts of the score (embedding, text mentions) chose different short
+    stops. A phrase with any word outside the vocabulary ("Gorgon pediment",
+    "Byzantine icons") is kept as written, since that detail is what the
+    semantic score is for."""
+    out = []
+    for phrase in interests:
+        words = [w for w in _words(phrase) if w not in _FILLER_WORDS]
+        keys = [_ALIASES.get(w, w) for w in words]
+        if keys and all(k in INTEREST_VOCAB for k in keys):
+            out.extend(keys)
+        else:
+            out.append(phrase)
+    return list(dict.fromkeys(out))
+
+
 def interest_keys(interests: list[str]) -> set[str]:
     keys = set()
     for phrase in interests:

@@ -20,7 +20,7 @@ from app.data import POIRepository, get_repository
 from app.hours import local_dt, open_intervals
 from app.itinerary import Itinerary, PlanConstraints, PlanResult
 from app.models import POI, Category, Setting
-from app.recommend import candidates, combine_scores, keyword_scores, split_setting_words
+from app.recommend import candidates, canonical_interests, combine_scores, keyword_scores, split_setting_words
 from app.state import Preferences, SessionState
 from app.weather import WeatherProvider, WeatherUnavailable, now_local, provider_for, summarize
 
@@ -64,10 +64,11 @@ class ToolOutput:
 
 
 def ranking_terms(c: PlanConstraints) -> list[str]:
-    """Interests for relevance ranking. Models often pass categories=['history']
-    without interests; without a fallback the planner would fill the window with
-    whatever history-category place is longest, regardless of fit."""
-    return c.interests or [cat.value.replace("_", " ") for cat in c.categories]
+    """Interests for relevance ranking, in canonical form. Models often pass
+    categories=['history'] without interests; without a fallback the planner
+    would fill the window with whatever history-category place is longest,
+    regardless of fit."""
+    return canonical_interests(c.interests) or [cat.value.replace("_", " ") for cat in c.categories]
 
 
 def scores_for(deps: Deps, interests: list[str]) -> dict[str, float]:
