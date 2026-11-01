@@ -83,6 +83,13 @@ def scores_for(deps: Deps, interests: list[str]) -> dict[str, float]:
 # history places (squares, gates) instead of museums.
 INTERESTS_DOC = ("The visitor's topics in their own words, e.g. ['museums'], ['art'], ['venetian history', 'views']. "
                  "Always include them: they rank and filter places. Museums and galleries are not a category.")
+# Seen in the gpt-oss eval run: "skip museums" was not passed when no current stop was a museum (E5), and
+# "my 7-year-old is joining" led to a details lookup instead of storing the child (E6).
+CHILD_DOC = ("True whenever the visitor mentions a child, even if the current stops already suit children: "
+             "it also slows the walking pace and is kept for later changes.")
+CHILD_AGE_DOC = "The child's age, whenever the visitor states it."
+EXCLUDE_DOC = ("Whatever the visitor says to skip or avoid, e.g. ['museum'], even if no current stop has it: "
+               "added to earlier exclusions and kept for later changes.")
 CATEGORIES_DOC = ("Optional coarse dataset category (history, nature, food, local_market, nightlife). Too broad on its own: "
                   "'history' includes fortresses, squares, churches and museums. Use only together with interests.")
 
@@ -128,10 +135,10 @@ class DetailsArgs(BaseModel):
 class RecommendArgs(BaseModel):
     interests: list[str] | None = Field(default=None, description=INTERESTS_DOC)
     categories: list[Category] | None = Field(default=None, description=CATEGORIES_DOC)
-    exclude_tags: list[str] | None = Field(default=None, description="Things to avoid, e.g. ['museum'].")
+    exclude_tags: list[str] | None = Field(default=None, description=EXCLUDE_DOC)
     settings: list[Setting] | None = Field(default=None, description="Allowed settings, e.g. ['outdoor'].")
-    with_child: bool | None = None
-    child_age: int | None = Field(default=None, ge=0, le=17)
+    with_child: bool | None = Field(default=None, description=CHILD_DOC)
+    child_age: int | None = Field(default=None, ge=0, le=17, description=CHILD_AGE_DOC)
     date: dt.date | None = Field(default=None, description="If given, only places open that day (fixture hours).")
     limit: int = Field(default=6, ge=1, le=12)
 
@@ -150,11 +157,11 @@ class PlanArgs(BaseModel):
     duration_minutes: int | None = Field(default=None, ge=30, le=600, description="Alternative to end_time.")
     interests: list[str] | None = Field(default=None, description=INTERESTS_DOC + " Replaces earlier interests.")
     categories: list[Category] | None = Field(default=None, description=CATEGORIES_DOC)
-    exclude_tags: list[str] | None = Field(default=None, description="Added to earlier exclusions, e.g. ['museum'].")
+    exclude_tags: list[str] | None = Field(default=None, description=EXCLUDE_DOC)
     exclude_categories: list[Category] | None = None
     settings: list[Setting] | None = Field(default=None, description="Allowed settings, e.g. ['outdoor'].")
-    with_child: bool | None = None
-    child_age: int | None = Field(default=None, ge=0, le=17)
+    with_child: bool | None = Field(default=None, description=CHILD_DOC)
+    child_age: int | None = Field(default=None, ge=0, le=17, description=CHILD_AGE_DOC)
     must_include_places: list[str] | None = Field(default=None, description=(
         "Only places the visitor named explicitly, in their words; triggers a feasibility check of just those places. "
         "Leave empty for topics such as 'fortresses' or 'museums', and never add places yourself."))
@@ -170,9 +177,9 @@ class ReplaceArgs(BaseModel):
     interests: list[str] | None = Field(default=None, description="What the replacement should be, in the visitor's words, e.g. ['park'], ['museum'].")
     settings: list[Setting] | None = Field(default=None, description="Allowed settings for the replacement only.")
     categories: list[Category] | None = Field(default=None, description=CATEGORIES_DOC)
-    exclude_tags: list[str] | None = None
-    with_child: bool | None = Field(default=None, description="Persisted: the party includes a child.")
-    child_age: int | None = Field(default=None, ge=0, le=17)
+    exclude_tags: list[str] | None = Field(default=None, description=EXCLUDE_DOC)
+    with_child: bool | None = Field(default=None, description=CHILD_DOC)
+    child_age: int | None = Field(default=None, ge=0, le=17, description=CHILD_AGE_DOC)
 
 
 class ReviseArgs(BaseModel):
@@ -181,12 +188,12 @@ class ReviseArgs(BaseModel):
     end_time: LenientTime | None = None
     interests: list[str] | None = Field(default=None, description=INTERESTS_DOC + " Replaces earlier interests.")
     categories: list[Category] | None = Field(default=None, description=CATEGORIES_DOC)
-    exclude_tags: list[str] | None = Field(default=None, description="Added to earlier exclusions.")
+    exclude_tags: list[str] | None = Field(default=None, description=EXCLUDE_DOC)
     allow_tags: list[str] | None = Field(default=None, description="Remove earlier exclusions.")
     exclude_categories: list[Category] | None = None
     settings: list[Setting] | None = None
-    with_child: bool | None = None
-    child_age: int | None = Field(default=None, ge=0, le=17)
+    with_child: bool | None = Field(default=None, description=CHILD_DOC)
+    child_age: int | None = Field(default=None, ge=0, le=17, description=CHILD_AGE_DOC)
     remove_places: list[str] | None = Field(default=None, description="Places to drop from the plan.")
     max_stops: int | None = Field(default=None, ge=1, le=8)
 

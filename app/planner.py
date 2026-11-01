@@ -28,6 +28,9 @@ W_WAIT_MIN = 0.10
 W_KEEP = 4.0
 W_NAMED = 30.0  # a place the visitor named outweighs any unrequested stop
 BEAM_WIDTH = 60
+# Cost of dropping one more stop in a revision, in relevance x minutes: about a
+# 15-minute stop of average relevance, so an extra drop must keep clearly more.
+DROP_COST = 10.0
 FILL_BEAM_WIDTH = 10  # filling freed time around kept stops: few stops to add, so a narrow beam suffices
 MAX_REQUIRED_STOPS = 7
 
@@ -384,20 +387,31 @@ def _named_notes(named: set[str], new_ids: set[str], repo: POIRepository, alread
             for i in sorted(named - new_ids - already_noted)]
 
 
-def _keep_most(current: list[POI], scores: Mapping[str, float], ctx: Context, keep: set[str], named: set[str]) -> list[POI]:
-    """The largest order-preserving subset of the current stops that still fits,
-    best value among subsets of that size: drop as few stops as possible."""
+def _relevant_minutes_kept(combo: tuple[POI, ...], current: list[POI], scores: Mapping[str, float], named: set[str]) -> float:
+    kept = sum(scores.get(p.id, 0.0) * p.suggested_visit_minutes for p in combo)
+    return kept + W_NAMED * 10 * sum(p.id in named for p in combo) - DROP_COST * (len(current) - len(combo))
+
+
+def _keep_most(current: list[POI], scores: Mapping[str, float], ctx: Context, named: set[str]) -> list[POI]:
+    """The order-preserving subset of the current stops to keep after a
+    constraint change. Among subsets that drop as few stops as possible, or one
+    more, it keeps the most relevant visiting time (relevance x minutes), less a
+    cost per extra drop. Seen in testing: the plain value function, which pays
+    every stop the same for relevance, dropped the New Fortress (relevance 1.0,
+    65 min) for a Venetian visitor to keep five short stops."""
+    best, sizes = None, 0
     for k in range(len(current), 0, -1):
-        best = None
-        for combo in combinations(current, k):
-            stops, failed = schedule(list(combo), ctx)
-            if not failed:
-                v = value(stops, scores, keep, named)
-                if best is None or v > best[0]:
-                    best = (v, list(combo))
-        if best:
-            return best[1]
-    return []
+        fitting = [combo for combo in combinations(current, k) if not schedule(list(combo), ctx)[1]]
+        if not fitting:
+            continue
+        for combo in fitting:
+            score = _relevant_minutes_kept(combo, current, scores, named)
+            if best is None or score > best[0]:
+                best = (score, list(combo))
+        sizes += 1
+        if sizes == 2:  # the fewest drops, or one more
+            break
+    return best[1] if best else []
 
 
 def _fill(base: list[POI], pool: list[POI], scores: Mapping[str, float], ctx: Context, limit: int,
@@ -459,7 +473,7 @@ def replan_preserving(
     pool += [p for p in still_allowed if p not in pool]
     keep = {p.id for p in still_allowed}
     reserve_ctx = Context.from_constraints(c, rain, reserve=True)
-    kept = _keep_most(still_allowed[: c.stop_limit], scores, ctx, keep, named)
+    kept = _keep_most(still_allowed[: c.stop_limit], scores, ctx, named)
     if kept:
         # fill within the reserve when the kept stops allow it, so later changes still have room
         new_stops = _fill(kept, pool, scores, reserve_ctx, c.stop_limit, keep, named) or schedule(kept, ctx)[0]
