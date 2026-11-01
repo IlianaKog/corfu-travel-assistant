@@ -217,8 +217,9 @@ def _shortfall_notes(c: PlanConstraints, schedulable: list[POI], planned: int, c
         lower = visits + (len(shortest) - 1) * config.TRANSITION_BUFFER_MIN
         durations = ", ".join(f"{p.name} {p.suggested_visit_minutes}" for p in shortest)
         if lower > c.window_minutes:
-            notes.append(f"Even the {len(shortest)} shortest matching visits need at least {lower} min "
-                         f"({visits} min of visits plus {config.TRANSITION_BUFFER_MIN}-min transitions, before walking): {durations} min.")
+            notes.append(f"Even the {len(shortest)} shortest matching visits need at least {lower} min without any walking "
+                         f"({visits} min of visits plus {config.TRANSITION_BUFFER_MIN}-min transitions): {durations} min. "
+                         "Walking time comes on top of this.")
         else:
             notes.append("Their visit times alone would fit; opening hours and walking distances between them leave room for fewer.")
     return notes
@@ -495,7 +496,9 @@ def check_feasibility(
     notes = []
     visit_total = sum(p.suggested_visit_minutes for p in required)
     window = c.window_minutes
-    notes.append(f"The suggested visit durations alone add up to {visit_total} min, against a {window}-min window (walking not included).")
+    # Two plain sentences: "(walking not included)" was read as "walking included" by gpt-oss-120b, 3 times of 3.
+    notes.append(f"The visits take {visit_total} min in total, against a {window}-min window. "
+                 "This number does not count walking; walking time comes on top of it.")
     for p in required:
         step = try_stop(p, None, None, ctx)
         if step.code in ("unknown_hours", "closed", "window_exceeded"):
