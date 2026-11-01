@@ -182,8 +182,8 @@ In production the loop maps directly onto LangGraph: each tool becomes a node, a
 | `get_weather` | Forecast for a date/window or the next N hours; live Open-Meteo or an injected fixture, always labelled | no |
 | `plan_itinerary` | New validated plan, or a feasibility check for named places (`must_include_places`) | stores plan and preferences |
 | `replace_stop` | Replaces one stop, keeping the others and their order | stores plan; persists party facts only |
-| `revise_itinerary` | Applies changed constraints (window, exclusions, child, removals), keeping stops that still fit | stores plan and preferences |
-| `adapt_plan_to_weather` | Fetches the forecast for the current plan's window itself and adapts it to rain | stores plan |
+| `revise_itinerary` | Applies changed constraints (window, exclusions, child, removals) with as few changes as possible: drops few stops, keeping the most relevant visiting time, then fills the freed time | stores plan and preferences |
+| `adapt_plan_to_weather` | Fetches the forecast for the current plan's window itself and adapts it to rain | stores plan; later changes keep avoiding rain |
 
 ### Separation of responsibilities
 
@@ -200,12 +200,14 @@ In production the loop maps directly onto LangGraph: each tool becomes a node, a
 
 1. **The itinerary is rendered by code, not written by the LLM.** The LLM's answer refers to the plan, but the timetable shown to the user comes straight from the planner's output. A hallucinated time cannot reach the user.
 2. **Conversation state is structured and lives on the server.** The LLM changes it only through tool arguments, for example `replace_stop(stop_number=2, with_child=true)`. Tools merge what they receive over what is stored, and every result echoes `active_constraints`. The merge rules are explicit:
-   - date, times and interests are replaced only when given;
-   - moving only the start time keeps the window's length ("from 16:00" after a one-hour plan means 16:00–17:00);
-   - exclusions and removed places accumulate;
+   - date, times and interests are replaced only when given; a topic the visitor adds (`add_interests`) is appended in code, so the earlier ones cannot be dropped, and may swap one or two stops so the new topic appears;
+   - moving only the start time keeps what the visitor stated: a duration keeps the window's length ("from 16:00" after "one hour" means 16:00–17:00), and an end time stays ("free 10:00–13:30", then "start at 10:30", means 10:30–13:30);
+   - exclusions and removed places accumulate, and a replaced stop counts as removed, so a later change cannot bring it back;
+   - places the visitor named are kept through later changes while they still fit, and a dropped one is reported;
    - facts about the party (a child, their age) persist;
+   - once the plan has been checked against the weather, later changes (`replace_stop`, `revise_itinerary`, a new plan) fetch the forecast again and keep outdoor stops out of the rain;
    - a wish for one replacement slot, or a requested number of stops ("five museums"), applies to that request only.
-3. **Not every question goes through vector search.** "Open on Tuesday", "indoor", "child-friendly" are metadata filters. Embeddings are used for descriptive relevance and to rank candidates by interest.
+3. **Not every question goes through vector search.** "Open on Tuesday", "indoor", "child-friendly" are metadata filters. Embeddings are used for descriptive relevance and to rank candidates by interest. Interests that differ only in word form or filler ("historical attractions", "historic sites", "history") are ranked as one vocabulary term, so the plan does not depend on how a model phrases them; any phrase with words outside the vocabulary ("Gorgon pediment") is kept as written. With several interests, each is scored on its own scale and the planner rewards covering each of them, so "history and views" includes waterfront stops instead of only history; a place that covers none of them is not used as a filler.
 4. **Unknown is not open.** A POI with `opening_hours_fixture: null` is never scheduled and never promised as an indoor or rain shelter stop. It may be mentioned with an explicit caveat.
 5. **Weather is injected through an interface.** `WeatherProvider` has two implementations: `OpenMeteoProvider` (always used for live forecasts) and `FixtureProvider` (used only when a fixture is explicitly injected for reproducible tests). The prompt never carries rain timing.
 6. **Similarity scores are not treated as proof.** On this corpus cosine similarity does not separate supported from unsupported questions. "Corfu aquarium with sharks" scores 0.66 against the Byzantine Museum, higher than genuine matches. Retrieval therefore also reports query terms that appear nowhere in the dataset, and the tool layer states which facts the dataset never contains (prices, tickets, bookings, live hours). The LLM may only answer from a passage that actually states the fact.
@@ -309,7 +311,9 @@ tests/             deterministic tests (no LLM, no network)
 eval/
   cases.py         10 evaluation cases with deterministic checks
   run_eval.py      runs the cases against the real LLM
-  results.md       expected vs observed behaviour, generated (+ results.json, raw)
+  results.md       first run: expected vs observed behaviour, generated (+ results.json, raw)
+  results2.md      intermediate run: tightened cases + two added cases (+ results2.json)
+  results3.md      final run: final code, 10 cases (+ results3.json)
   FINDINGS.md      analysis: observed failure, causes, proposed improvements
 demo/
   run_scenarios.py executable demo of scenarios A–E (prompts verbatim from the brief)
@@ -365,7 +369,7 @@ The itinerary validation and the rain-replanning branch are fully reproducible w
 
 - No routing: walking times ignore elevation (for example the climb inside the fortresses) and road crossings.
 - Time windows cannot cross midnight (end must be after start on the same day), although the opening-hours logic supports overnight hours. The assistant explains this instead of planning (evaluation case E10).
-- The LLM can drop a fact the visitor stated, as in E6, where the model omitted a child's age. It can also skip style instructions such as `[CF-xxx]` citations. Hard constraints are enforced in code; the sources are always returned in the `sources` field.
+- The LLM can drop a fact the visitor stated, as in E6, where the model omitted a child's age (see `eval/FINDINGS.md` for this and later runs). It can also skip style instructions such as `[CF-xxx]` citations. Hard constraints are enforced in code; the sources are always returned in the `sources` field.
 - Free-tier LLMs are rate-limited and occasionally choose the wrong tool or arguments. Validation catches bad arguments, but a poor tool choice can still produce a weaker answer.
 - Live weather is only available within Open-Meteo's range (observed: about 92 days back to 15 days ahead). Outside it the provider's own error is reported as "unavailable", never guessed. Past dates return model data, not observations.
 - The injected fixture covers only 2026-10-07, 13:00–17:00. Other dates or hours are reported as having no data instead of falling back to live weather, so synthetic and live data are never mixed in one answer.
@@ -376,4 +380,4 @@ The itinerary validation and the rain-replanning branch are fully reproducible w
 - Session state is in-memory and single-process.
 - The lexical check for query terms absent from the dataset detects missing topics (an aquarium), not missing facts about present topics. "Ticket" appears in dataset disclaimers, so a ticket-price question is not flagged lexically; it relies on the tool layer's list of facts the dataset does not contain.
 
-See [`eval/FINDINGS.md`](eval/FINDINGS.md) for what the evaluation revealed (an observed failure, its cause and proposed improvements) and [`eval/results.md`](eval/results.md) for the full run.
+See [`eval/FINDINGS.md`](eval/FINDINGS.md) for what the evaluation revealed (an observed failure, its cause and proposed improvements) and [`eval/results3.md`](eval/results3.md) for the final run (10/10). [`eval/results.md`](eval/results.md) is the first run, kept because FINDINGS analyses it.
