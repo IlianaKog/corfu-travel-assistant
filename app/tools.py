@@ -20,8 +20,8 @@ from app.data import POIRepository, get_repository
 from app.hours import local_dt, open_intervals
 from app.itinerary import Itinerary, PlanConstraints, PlanResult
 from app.models import POI, Category, Setting
-from app.recommend import (candidates, canonical_interests, combine_scores, keyword_scores, relevance_per_interest,
-                           split_setting_words)
+from app.recommend import (INTEREST_VOCAB, candidates, canonical_interests, combine_scores, keyword_scores,
+                           relevance_per_interest, split_setting_words)
 from app.state import Preferences, SessionState
 from app.weather import WeatherProvider, WeatherUnavailable, now_local, provider_for, summarize
 
@@ -140,7 +140,8 @@ class RecommendArgs(BaseModel):
     settings: list[Setting] | None = Field(default=None, description="Allowed settings, e.g. ['outdoor'].")
     with_child: bool | None = Field(default=None, description=CHILD_DOC)
     child_age: int | None = Field(default=None, ge=0, le=17, description=CHILD_AGE_DOC)
-    date: dt.date | None = Field(default=None, description="If given, only places open that day (fixture hours).")
+    date: dt.date | None = Field(default=None, description=(
+        "The visit date, whenever the visitor gives one: places closed that day or with unknown hours are left out."))
     limit: int = Field(default=6, ge=1, le=12)
 
 
@@ -509,18 +510,25 @@ def recommend_places(state: SessionState, args: RecommendArgs, deps: Deps) -> To
                         with_child=prefs.with_child)
     scores = scores_for(deps, ranking_terms(c))
     ranked = sorted(candidates(deps.repo.all(), c, scores), key=lambda p: (-scores.get(p.id, 0), p.id))
+    # Seen live (E11): the visitor gave a Monday, the model omitted the date, and the reply recommended three
+    # museums closed on Mondays. Filter by the session's date too, and give each place its closed days.
+    filter_day = args.date or prefs.date
     out = []
     for p in ranked:
-        intervals = open_intervals(p, day) if args.date else True
-        if args.date and not intervals:
+        if filter_day and not open_intervals(p, filter_day):
             continue
+        closed = [d for d, h in p.opening_hours_fixture.items() if h is None] if p.hours_known else "unknown hours"
         out.append({"poi_id": p.id, "name": p.name, "relevance": round(scores.get(p.id, 0), 2), "category": p.category.value,
                     "tags": p.tags, "setting": p.setting.value, "family_suitability_fixture": p.family_suitability_fixture,
-                    "hours_known": p.hours_known})
+                    "closed_on": closed})
         if len(out) == args.limit:
             break
-    return ToolOutput({"recommendations": out, "active_constraints": prefs.describe(),
-                       "filtered_by_open_on": day.isoformat() if args.date else None}, sources=[r["poi_id"] for r in out])
+    data = {"recommendations": out, "active_constraints": prefs.describe(),
+            "filtered_by_open_on": filter_day.isoformat() if filter_day else None}
+    if not filter_day:
+        data["hours_not_checked"] = ("No visit date was given, so opening days were not checked. If the visitor named a day, "
+                                     "call again with date; otherwise mention closed_on for each place.")
+    return ToolOutput(data, sources=[r["poi_id"] for r in out])
 
 
 def get_weather(state: SessionState, args: WeatherArgs, deps: Deps) -> ToolOutput:
@@ -605,7 +613,13 @@ def revise_itinerary(state: SessionState, args: ReviseArgs, deps: Deps) -> ToolO
     if args.add_interests:
         # added in code, so a model that sends only the new topic cannot drop the earlier ones
         added, implied_settings = split_setting_words(args.add_interests)
-        prefs.interests = _union(prefs.interests, added)
+        # Seen live (E12): the plan had only categories=['history'], so the topic lived in the category; keep it
+        # as an interest, and widen the categories so the added topic's places (gardens: nature) can be chosen.
+        base_topics = prefs.interests or [cat.value.replace("_", " ") for cat in prefs.categories]
+        prefs.interests = _union(base_topics, added)
+        if prefs.categories:
+            prefs.categories = _union(prefs.categories, sorted(
+                {Category(cat) for t in canonical_interests(added) for cat in INTEREST_VOCAB.get(t, {}).get("categories", ())}))
         if prefs.settings and implied_settings:
             prefs.settings = _union(prefs.settings, implied_settings)
     old_topics, topics = canonical_interests(state.preferences.interests), canonical_interests(prefs.interests)

@@ -187,6 +187,79 @@ def test_canonical_interests_keep_detail_outside_the_vocabulary(given, expected)
     assert canonical_interests(given) == expected
 
 
+def test_two_interests_are_both_covered(deps):
+    """Seen in testing: 'history and views' planned exactly as 'history', with no waterfront stop."""
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-06", start_time="11:00", end_time="15:00", interests=["history", "views"])
+    ids = set(s.itinerary.poi_ids())
+    assert ids & {"CF-019", "CF-034"}  # Faliraki Waterfront or Old Port, places with views only
+    assert ids & {"CF-001", "CF-028", "CF-007"}  # and history
+
+
+def test_a_place_covering_no_interest_is_not_a_filler(deps):
+    """Scored per interest, the palace facade reached 0.34 for 'art and museums' while covering neither."""
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-05", start_time="13:00", end_time="17:00", interests=["art", "museums"])
+    assert s.itinerary.poi_ids() == ["CF-007", "CF-012", "CF-029"]
+
+
+def test_an_added_interest_is_kept_with_the_earlier_ones_and_can_swap_a_stop(deps):
+    """Seen in testing: an added interest either replaced the earlier ones or changed nothing ('Kept all stops')."""
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-06", start_time="11:00", end_time="15:00", interests=["historical attractions"])
+    before = s.itinerary.poi_ids()
+    call(s, deps, "revise_itinerary", add_interests=["gardens"])
+    after = s.itinerary.poi_ids()
+    assert s.preferences.interests == ["historical attractions", "gardens"]
+    assert "CF-036" in after  # Park of 25 March
+    assert {"CF-001", "CF-007"} <= set(after) and len(set(before) - set(after)) <= 2  # main stops kept, at most two swapped
+
+
+def test_an_added_interest_already_covered_keeps_the_plan_and_says_so(deps):
+    """'History and views' planned from scratch includes waterfront stops; 'also views' after a history plan
+    keeps it, because the Old Fortress is a viewpoint. The difference is by design (change only what must), so it is explained."""
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-06", start_time="11:00", end_time="15:00", interests=["historical attractions"])
+    before = s.itinerary.poi_ids()
+    out = call(s, deps, "revise_itinerary", add_interests=["views"])
+    assert s.itinerary.poi_ids() == before
+    assert "'view' is already covered by Old Fortress, so the current stops were kept instead of replanning." in out.data["notes"]
+
+
+def test_an_added_interest_after_a_category_only_plan_keeps_the_topic_and_reaches_new_places(deps):
+    """Seen live (E12): the plan had categories=['history'] and no interests; 'also gardens' replaced
+    the topic and the history category still excluded every park."""
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-06", start_time="11:00", end_time="15:00", categories=["history"])
+    call(s, deps, "revise_itinerary", add_interests=["gardens"])
+    assert s.preferences.interests == ["history", "gardens"]
+    assert {c.value for c in s.preferences.categories} == {"history", "nature"}
+    assert any({"park", "garden", "green_space"} & set(deps.repo.get(i).tags) for i in s.itinerary.poi_ids())
+
+
+def test_recommendations_without_a_date_report_closed_days(deps):
+    """Seen live (E11): the model omitted the visitor's Monday and the reply recommended museums closed on Mondays."""
+    out = call(SessionState(), deps, "recommend_places", interests=["art", "museums"])
+    assert out.data["filtered_by_open_on"] is None and "hours_not_checked" in out.data
+    asian = next(r for r in out.data["recommendations"] if r["poi_id"] == "CF-017")
+    assert asian["closed_on"] == ["mon"]
+
+
+def test_recommendations_use_the_session_date_when_the_model_omits_it(deps):
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-05", start_time="13:00", end_time="17:00", interests=["art", "museums"])
+    out = call(s, deps, "recommend_places", interests=["art", "museums"])
+    ids = {r["poi_id"] for r in out.data["recommendations"]}
+    assert out.data["filtered_by_open_on"] == "2026-10-05" and not ids & {"CF-014", "CF-017", "CF-031"}
+
+
+def test_an_added_interest_that_cannot_be_covered_is_explained(deps):
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-06", start_time="11:00", end_time="15:00", interests=["historical attractions"])
+    out = call(s, deps, "revise_itinerary", add_interests=["churches"])
+    assert any("no confirmed opening hours or are closed on Tuesday" in n for n in out.data["notes"])
+
+
 def test_outdoor_wish_in_interests_filters_by_setting(deps):
     s = SessionState()
     call(s, deps, "plan_itinerary", date="2026-10-07", start_time="13:00", end_time="17:00", interests=["outdoor historical attractions"])
