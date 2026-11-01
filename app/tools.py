@@ -20,7 +20,8 @@ from app.data import POIRepository, get_repository
 from app.hours import local_dt, open_intervals
 from app.itinerary import Itinerary, PlanConstraints, PlanResult
 from app.models import POI, Category, Setting
-from app.recommend import candidates, canonical_interests, combine_scores, keyword_scores, split_setting_words
+from app.recommend import (candidates, canonical_interests, combine_scores, keyword_scores, relevance_per_interest,
+                           split_setting_words)
 from app.state import Preferences, SessionState
 from app.weather import WeatherProvider, WeatherUnavailable, now_local, provider_for, summarize
 
@@ -72,10 +73,10 @@ def ranking_terms(c: PlanConstraints) -> list[str]:
 
 
 def scores_for(deps: Deps, interests: list[str]) -> dict[str, float]:
-    kw = keyword_scores(deps.repo.all(), interests)
+    pois = deps.repo.all()
     if not interests:
-        return kw
-    return combine_scores(kw, deps.index.semantic_scores("; ".join(interests)))
+        return keyword_scores(pois, interests)
+    return relevance_per_interest({t: combine_scores(keyword_scores(pois, [t]), deps.index.semantic_scores(t)) for t in interests})
 
 
 # Shared argument descriptions. Seen live: for "5 museums" the model sent only
@@ -190,7 +191,11 @@ class ReviseArgs(BaseModel):
     date: dt.date | None = None
     start_time: LenientTime | None = None
     end_time: LenientTime | None = None
-    interests: list[str] | None = Field(default=None, description=INTERESTS_DOC + " Replaces earlier interests.")
+    interests: list[str] | None = Field(default=None, description=(
+        INTERESTS_DOC + " Replaces earlier interests: use only when the visitor changes topic ('only museums from now on')."))
+    add_interests: list[str] | None = Field(default=None, description=(
+        "A topic the visitor adds ('also views', 'and some churches'): kept together with the earlier interests. "
+        "The plan may swap a stop or two to include it."))
     categories: list[Category] | None = Field(default=None, description=CATEGORIES_DOC)
     exclude_tags: list[str] | None = Field(default=None, description=EXCLUDE_DOC)
     allow_tags: list[str] | None = Field(default=None, description="Remove earlier exclusions.")
@@ -597,6 +602,14 @@ def revise_itinerary(state: SessionState, args: ReviseArgs, deps: Deps) -> ToolO
     prefs = state.preferences.merged(date=d, start=s, end=e, interests=args.interests,
                                      categories=args.categories, settings=args.settings, with_child=args.with_child,
                                      child_age=args.child_age)
+    if args.add_interests:
+        # added in code, so a model that sends only the new topic cannot drop the earlier ones
+        added, implied_settings = split_setting_words(args.add_interests)
+        prefs.interests = _union(prefs.interests, added)
+        if prefs.settings and implied_settings:
+            prefs.settings = _union(prefs.settings, implied_settings)
+    old_topics, topics = canonical_interests(state.preferences.interests), canonical_interests(prefs.interests)
+    topics_changed, new_topics = topics != old_topics, [t for t in topics if t not in old_topics]
     prefs.exclude_tags = [t for t in _union(prefs.exclude_tags, args.exclude_tags) if t not in set(args.allow_tags or [])]
     prefs.exclude_categories = _union(prefs.exclude_categories, args.exclude_categories)
     if args.remove_places:
@@ -612,7 +625,7 @@ def revise_itinerary(state: SessionState, args: ReviseArgs, deps: Deps) -> ToolO
     state.preferences = prefs
     c, rain, extra = _with_weather(deps, state, c)
     result = planner.replan_preserving(state.itinerary, c, deps.repo, scores_for(deps, ranking_terms(c)), rain,
-                                       named=set(prefs.named_places))
+                                       named=set(prefs.named_places), topics_changed=topics_changed, new_topics=new_topics)
     return _with_time_notices(_weather_output(_plan_output(state, result, extra), extra), state, c)
 
 

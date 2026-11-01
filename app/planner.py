@@ -27,10 +27,12 @@ W_WALK_MIN = 0.15
 W_WAIT_MIN = 0.10
 W_KEEP = 4.0
 W_NAMED = 30.0  # a place the visitor named outweighs any unrequested stop
+W_COVER = 8.0  # per interest the plan covers, when the visitor gave several
 BEAM_WIDTH = 60
 # Cost of dropping one more stop in a revision, in relevance x minutes: about a
 # 15-minute stop of average relevance, so an extra drop must keep clearly more.
 DROP_COST = 10.0
+COVER_MINUTES = 20.0  # an interest still covered after a revision, in the same units
 FILL_BEAM_WIDTH = 10  # filling freed time around kept stops: few stops to add, so a narrow beam suffices
 MAX_REQUIRED_STOPS = 7
 
@@ -118,8 +120,14 @@ def schedule(pois: list[POI], ctx: Context) -> tuple[list[Stop], Step | None]:
     return stops, None
 
 
+def interests_covered(ids, scores: Mapping[str, float]) -> int:
+    """How many of the visitor's interests the stops cover (0 when there is only one interest)."""
+    covers = getattr(scores, "covers", None)
+    return len(set().union(*(covers.get(i, ()) for i in ids))) if covers else 0
+
+
 def value(stops: list[Stop], scores: Mapping[str, float], keep: set[str] = frozenset(), named: set[str] = frozenset()) -> float:
-    v = 0.0
+    v = W_COVER * interests_covered([s.poi_id for s in stops], scores)
     for s in stops:
         v += W_RELEVANCE * scores.get(s.poi_id, 0.0) + W_VISIT_MIN * s.visit_minutes
         v -= W_WALK_MIN * s.walk_minutes + W_WAIT_MIN * s.wait_minutes
@@ -389,6 +397,7 @@ def _named_notes(named: set[str], new_ids: set[str], repo: POIRepository, alread
 
 def _relevant_minutes_kept(combo: tuple[POI, ...], current: list[POI], scores: Mapping[str, float], named: set[str]) -> float:
     kept = sum(scores.get(p.id, 0.0) * p.suggested_visit_minutes for p in combo)
+    kept += COVER_MINUTES * interests_covered([p.id for p in combo], scores)
     return kept + W_NAMED * 10 * sum(p.id in named for p in combo) - DROP_COST * (len(current) - len(combo))
 
 
@@ -412,6 +421,67 @@ def _keep_most(current: list[POI], scores: Mapping[str, float], ctx: Context, na
         if sizes == 2:  # the fewest drops, or one more
             break
     return best[1] if best else []
+
+
+def _swap_for_topics(current: list[POI], pool: list[POI], scores: Mapping[str, float], ctx: Context, fill_ctx: Context,
+                     limit: int, keep: set[str], named: set[str]) -> list[Stop]:
+    """After the interests change: keep the current stops, or swap out up to two
+    of them for places that match the new interests, whichever plan keeps the most
+    relevant visiting time (each stop that leaves costs DROP_COST). Seen in
+    testing: adding "views" kept every stop, because nothing had to be dropped
+    for time, so the new interest changed nothing."""
+    original = {p.id for p in current}
+    best = None
+    for k in range(len(current), max(len(current) - 3, 0), -1):  # keep all, drop one or drop two
+        fitting = [combo for combo in combinations(current, k) if not schedule(list(combo), ctx)[1]]
+        fitting.sort(key=lambda combo: -_relevant_minutes_kept(combo, current, scores, named))
+        for combo in fitting[:3]:
+            stops = _fill(list(combo), pool, scores, fill_ctx, limit, keep, named) or schedule(list(combo), ctx)[0]
+            ids = [s.poi_id for s in stops]
+            score = (sum(scores.get(s.poi_id, 0.0) * s.visit_minutes for s in stops)
+                     + COVER_MINUTES * interests_covered(ids, scores) + W_NAMED * 10 * sum(i in named for i in ids)
+                     - DROP_COST * len(original - set(ids)))
+            if best is None or score > best[0]:
+                best = (score, stops)
+    return best[1] if best else []
+
+
+def _already_covered_notes(new_topics: list[str], old_ids: set[str], new_ids: set[str], scores: Mapping[str, float],
+                           repo: POIRepository) -> list[str]:
+    """Say when an added interest is already met by stops the visitor kept. A revision changes only what
+    it must, so 'also views' after a history plan keeps the Old Fortress (a viewpoint) rather than
+    planning as 'history and views' would from scratch; without a note the plan looks unchanged for no reason."""
+    covers = getattr(scores, "covers", None)
+    if not covers:
+        return []
+    notes = []
+    for term in new_topics:
+        by = sorted(i for i in new_ids if term in covers.get(i, ()))
+        if by and all(i in old_ids for i in by):
+            notes.append(f"'{term}' is already covered by {', '.join(repo.get(i).name for i in by)}, "
+                         "so the current stops were kept instead of replanning.")
+    return notes
+
+
+def _uncovered_notes(new_ids: set[str], scores: Mapping[str, float], repo: POIRepository, ctx: Context) -> list[str]:
+    """Explain an interest the revised plan still does not cover, instead of a silent 'Kept all stops'.
+    Seen in testing: 'also churches' on a Tuesday changed nothing, because every church has unknown hours."""
+    covers = getattr(scores, "covers", None)
+    if not covers:
+        return []
+    covered = set().union(*(covers.get(i, ()) for i in new_ids))
+    notes = []
+    for term in (t for t in scores.interests if t not in covered):
+        matching = sorted((repo.get(i) for i, terms in covers.items() if term in terms), key=lambda p: p.name)
+        open_today = [p for p in matching if p.hours_known and open_intervals(p, ctx.day)]
+        names = ", ".join(p.name for p in (open_today or matching)[:4])
+        if not matching:
+            notes.append(f"No place in the dataset matches '{term}'.")
+        elif not open_today:
+            notes.append(f"No place for '{term}' can be added: {names} have no confirmed opening hours or are closed on {ctx.day:%A}.")
+        else:
+            notes.append(f"No place for '{term}' ({names}) fits the time window without dropping more of the current stops.")
+    return notes
 
 
 def _fill(base: list[POI], pool: list[POI], scores: Mapping[str, float], ctx: Context, limit: int,
@@ -450,19 +520,21 @@ def _fill(base: list[POI], pool: list[POI], scores: Mapping[str, float], ctx: Co
 
 def replan_preserving(
     itin: Itinerary, c: PlanConstraints, repo: POIRepository, scores: Mapping[str, float], rain: RainWindows | None = None,
-    named: set[str] = frozenset(),
+    named: set[str] = frozenset(), topics_changed: bool = False, new_topics: list[str] = (),
 ) -> PlanResult:
     """Apply changed constraints (window, exclusions, child, interests) to an
     existing plan with as few changes as possible: keep the most current stops
-    that still fit (named places first), then fill the freed time. Only if no
-    current stop fits is the plan rebuilt. Seen in testing: ending 30 min
-    earlier rebuilt the plan and dropped the Old Fortress for two short stops."""
+    that still fit (named places first), then fill the freed time. When the
+    interests changed, up to two stops may also be swapped for places that
+    match them. Only if no current stop fits is the plan rebuilt. Seen in
+    testing: ending 30 min earlier rebuilt the plan and dropped the Old Fortress
+    for two short stops."""
     ctx = Context.from_constraints(c, rain)
     current = [repo.get(i) for i in itin.poi_ids()]
     still_allowed = [p for p in current if constraint_violation(p, c) is None and (not c.categories or p.category in c.categories)]
     notes = [f"{p.name} no longer fits the constraints: {constraint_violation(p, c) or 'category not requested'}." for p in current if p not in still_allowed]
 
-    if still_allowed == current and c.date == itin.date:
+    if still_allowed == current and c.date == itin.date and not topics_changed:
         stops, failed = schedule(current, ctx)
         if not failed:
             new = _itinerary(c, stops)
@@ -473,8 +545,11 @@ def replan_preserving(
     pool += [p for p in still_allowed if p not in pool]
     keep = {p.id for p in still_allowed}
     reserve_ctx = Context.from_constraints(c, rain, reserve=True)
-    kept = _keep_most(still_allowed[: c.stop_limit], scores, ctx, named)
-    if kept:
+    swapped = _swap_for_topics(still_allowed[: c.stop_limit], pool, scores, ctx, reserve_ctx, c.stop_limit, keep, named) if topics_changed else []
+    kept = [] if swapped else _keep_most(still_allowed[: c.stop_limit], scores, ctx, named)
+    if swapped:
+        new_stops = swapped
+    elif kept:
         # fill within the reserve when the kept stops allow it, so later changes still have room
         new_stops = _fill(kept, pool, scores, reserve_ctx, c.stop_limit, keep, named) or schedule(kept, ctx)[0]
     else:
@@ -488,6 +563,9 @@ def replan_preserving(
     old_ids, new_ids = set(itin.poi_ids()), set(new.poi_ids())
     # only named places this change removed; one dropped earlier was explained then
     notes += _named_notes(named & old_ids, new_ids, repo, already_noted={p.id for p in current if p not in still_allowed})
+    if topics_changed:
+        notes += _already_covered_notes(list(new_topics), old_ids, new_ids, scores, repo)
+        notes += _uncovered_notes(new_ids, scores, repo, ctx)
     changes = [f"Kept {repo.get(i).name}." for i in itin.poi_ids() if i in new_ids]
     changes += [f"Removed {repo.get(i).name} ({i})." for i in itin.poi_ids() if i not in new_ids]
     changes += [f"Added {s.name} ({s.poi_id})." for s in new.stops if s.poi_id not in old_ids]

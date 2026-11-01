@@ -154,6 +154,37 @@ def combine_scores(
     }
 
 
+# Per-interest relevance at which a place counts as covering that interest.
+COVER_MIN = 0.5
+
+
+class Relevance(dict):
+    """Relevance per POI (0..1), plus which of the visitor's interests each POI
+    covers, so the planner can prefer plans that cover every interest."""
+
+    def __init__(self, scores: Mapping[str, float], covers: Mapping[str, frozenset[str]] | None = None,
+                 interests: list[str] | None = None):
+        super().__init__(scores)
+        self.covers = dict(covers or {})
+        self.interests = list(interests or [])
+
+
+def relevance_per_interest(per_interest: Mapping[str, Mapping[str, float]]) -> Relevance:
+    """Combine relevance computed separately for each interest. Each interest is
+    normalised on its own and a place scores its best interest, instead of one
+    summed score: summed, "history and views" planned exactly as "history",
+    because history earns category and tag points and the dataset has many more
+    history places, so places with views never made the plan."""
+    if len(per_interest) == 1:
+        return Relevance(next(iter(per_interest.values())))
+    ids = set().union(*per_interest.values())
+    return Relevance(
+        {i: max(s.get(i, 0.0) for s in per_interest.values()) for i in ids},
+        {i: frozenset(t for t, s in per_interest.items() if s.get(i, 0.0) >= COVER_MIN) for i in ids},
+        list(per_interest),
+    )
+
+
 def exclusion_reason(poi: POI, c: PlanConstraints) -> str | None:
     """Why a POI is out of scope or violates the hard constraints, or None.
     Opening hours and walking are checked later by the scheduler."""
@@ -202,6 +233,11 @@ def candidates(
         if exclusion_reason(poi, c):
             continue
         if c.interests and scores.get(poi.id, 0.0) < min_relevance:
+            continue
+        # With several interests, a place must cover one of them: scored per interest, the
+        # Spianada palace facade reached 0.34 for "art and museums" while covering neither.
+        covers = getattr(scores, "covers", None)
+        if covers and min_relevance > 0 and not covers.get(poi.id):
             continue
         out.append(poi)
     return out
