@@ -178,7 +178,7 @@ def test_requested_stop_count_shortfall_is_explained_with_numbers(deps):
     assert out.data["status"] == "partial"
     notes = " ".join(out.data["notes"])
     assert "Only 1 of the 5 requested stops fit in the 60-min window" in notes
-    assert "need at least" in notes and "before walking" in notes
+    assert "need at least" in notes and "without any walking" in notes
     # the count belongs to that request only, not to the stored preferences
     later = call(s, deps, "plan_itinerary", date="2026-10-30", start_time="10:00", end_time="14:00", interests=["museums"])
     assert later.data["status"] == "ok" and not any("requested stops" in n for n in later.data["notes"])
@@ -288,6 +288,8 @@ def test_moving_only_the_start_keeps_a_stated_end_time(deps):
     out = call(s, deps, "revise_itinerary", start_time="10:30")
     assert out.data["itinerary"]["window"] == "10:30-13:30" and out.notices == []
     assert {"CF-032", "CF-016"} <= set(s.itinerary.poi_ids())
+    # Old Fortress left in the previous turn (child); this change must not blame the new start for it
+    assert not any("Old Fortress" in n for n in out.data["notes"])
 
 
 def test_tool_schema_steers_topics_to_interests():

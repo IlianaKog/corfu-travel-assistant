@@ -471,7 +471,8 @@ def replan_preserving(
         return PlanResult(status="infeasible", itinerary=itin, notes=[*notes, "Nothing fits the new constraints; the previous itinerary is unchanged."])
     new = _itinerary(c, new_stops)
     old_ids, new_ids = set(itin.poi_ids()), set(new.poi_ids())
-    notes += _named_notes(named, new_ids, repo, already_noted={p.id for p in current if p not in still_allowed})
+    # only named places this change removed; one dropped earlier was explained then
+    notes += _named_notes(named & old_ids, new_ids, repo, already_noted={p.id for p in current if p not in still_allowed})
     changes = [f"Kept {repo.get(i).name}." for i in itin.poi_ids() if i in new_ids]
     changes += [f"Removed {repo.get(i).name} ({i})." for i in itin.poi_ids() if i not in new_ids]
     changes += [f"Added {s.name} ({s.poi_id})." for s in new.stops if s.poi_id not in old_ids]
