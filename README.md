@@ -7,9 +7,18 @@ The guiding rule: **the LLM interprets requests and phrases answers; determinist
 > The dataset is a recruitment exercise fixture. Opening hours, visit durations and family-suitability flags are scenario assumptions, not live visitor information.
 
 **For reviewers:**
-- **Scenarios A–E** run with one command (`python -m demo.run_scenarios`, see [Tests, evaluation and demo](#tests-evaluation-and-demo)). The latest run is in [`demo/transcription3.md`](demo/transcription3.md).
+
+```bash
+cp .env.example .env                                       # set LLM_API_KEY (Gemini free tier by default)
+docker compose up --build                                  # chat UI at http://localhost:8000
+docker compose run --rm app python -m demo.run_scenarios   # scenarios A–E, prompts verbatim from the brief
+docker compose run --rm app python -m eval.run_eval        # 10 evaluation cases against the real LLM
+docker compose run --rm app pytest                         # deterministic tests, no LLM key or network
+```
+
+- **Scenarios A–E:** our run is in [`demo/transcription_final.md`](demo/transcription_final.md). Running the demo yourself writes `demo/transcript.md` and leaves ours in place.
 - **Design note:** [`DESIGN.md`](DESIGN.md), two pages.
-- **Evaluation:** [`eval/FINDINGS.md`](eval/FINDINGS.md) explains what the evaluation revealed. [`eval/results3.md`](eval/results3.md) is the final run (10/10).
+- **Evaluation:** [`eval/results_final.md`](eval/results_final.md) is our final run (10/10). Running the evaluation yourself writes `eval/results.md`. [`eval/FINDINGS.md`](eval/FINDINGS.md) lists the issues still open, with causes and proposed improvements.
 
 ---
 
@@ -203,11 +212,11 @@ tests/             deterministic tests (no LLM, no network)
 eval/
   cases.py         10 evaluation cases with deterministic checks
   run_eval.py      runs the cases against the real LLM
-  results3.md      final run (+ results3.json, raw); results.md and results2.md are earlier runs
-  FINDINGS.md      what the evaluation revealed: failures, causes, fixes, proposed improvements
+  results_final.md our final run (+ results_final.json, raw); a new run writes results.md
+  FINDINGS.md      open issues: what happens, cause, proposed improvement
 demo/
   run_scenarios.py executable demo of scenarios A–E (prompts verbatim from the brief)
-  transcription3.md  latest demo run, generated
+  transcription_final.md  our demo run; a new run writes transcript.md
 DESIGN.md          two-page design note
 Dockerfile, docker-compose.yml, .dockerignore
 requirements.txt   direct dependencies (ranges)
@@ -223,7 +232,7 @@ requirements.lock  exact tested versions (used by the Docker image)
 # deterministic tests (no LLM key or network; Open-Meteo is replayed from tests/fixtures/)
 docker compose run --rm app pytest
 
-# evaluation cases against the real LLM; writes eval/results.md (--only E5 E7 for a subset)
+# evaluation cases against the real LLM; writes eval/results.md and prints each conversation (--only E5 E7 for a subset)
 docker compose run --rm app python -m eval.run_eval
 
 # scenarios A–E with the brief's prompts verbatim; writes demo/transcript.md
@@ -249,6 +258,6 @@ In the demo, each scenario starts a new conversation and the follow-ups in B and
 - Live weather is limited to Open-Meteo's range (observed: about 92 days back to 15 days ahead); outside it the forecast is reported as unavailable. The injected fixture covers only 2026-10-07, 13:00–17:00, and is never mixed with live data.
 - The assumed-time check recognises common formats (`15:00`, `3 pm`, `noon`, "one hour", "half-day"). An unusual phrasing such as "quarter past three" produces a notice although the visitor gave a time, which errs on the side of disclosure.
 - The check for query terms absent from the dataset finds missing topics (an aquarium), not missing facts about present ones. "Ticket" appears in dataset disclaimers, so a price question relies on the tool's list of facts the dataset never contains.
-- The LLM can still drop a stated fact or choose a weaker tool call. Hard constraints are enforced in code; [`eval/FINDINGS.md`](eval/FINDINGS.md) records the cases seen and what was fixed.
+- The LLM can still drop a stated fact or choose a weaker tool call. Hard constraints are enforced in code; [`eval/FINDINGS.md`](eval/FINDINGS.md) lists the issues still open.
 - Interest matching relies on English descriptions and a small tag vocabulary.
 - Sessions are in memory and single-process; they are lost on restart.

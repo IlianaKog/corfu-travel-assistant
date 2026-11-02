@@ -1,6 +1,6 @@
 # Design note
 
-**Principle:** the LLM interprets requests and phrases answers; deterministic code decides and validates. Anything that must always hold (dates, opening hours, distances, schedule arithmetic, which places exist) is enforced in code, because a prompt instruction raises the probability of a behaviour but does not guarantee it. The evaluation showed this repeatedly (`eval/FINDINGS.md`).
+**Principle:** the LLM interprets requests and phrases answers; deterministic code decides and validates. Anything that must always hold (dates, opening hours, distances, schedule arithmetic, which places exist) is enforced in code, because a prompt instruction raises the probability of a behaviour but does not guarantee it. The evaluation showed this repeatedly; the tests named after each fix record what failed.
 
 ```
 message ─► agent loop (LLM) ─► tool call ─► argument validation (Pydantic) ─► tool
@@ -40,7 +40,7 @@ Infeasible requests are explained with the planner's arithmetic ("355 min of vis
 - **Change a constraint:** keep as many current stops as still fit (named places first), choosing what to drop by relevant visiting time (relevance × minutes), then fill the freed time around them. An added interest may swap up to two stops, and a note says when it is already covered or cannot be.
 - **Weather:** reorder the same stops into dry hours before substituting indoor places, always within the original window.
 
-A known gap: new plans and revisions optimise different measures, so "history and views" and "history, then also views" can differ (FINDINGS 2i).
+A known gap: new plans and revisions optimise different measures, so "history and views" and "history, then also views" can differ (`eval/FINDINGS.md`, issue 3).
 
 **Conversation state (`app/state.py`).** State is structured and server-side. Tools merge only what they are given, and every result echoes `active_constraints`:
 
@@ -54,7 +54,7 @@ A known gap: new plans and revisions optimise different measures, so "history an
 
 ## 2. Extending it safely
 
-**Rule:** behaviour that must always hold is added as code with a test, never only as a prompt instruction. Every change is checked by the deterministic suite (284 tests, no LLM or network) and the LLM evaluation (`eval/`, 10 cases; failures and fixes in `eval/FINDINGS.md`).
+**Rule:** behaviour that must always hold is added as code with a test, never only as a prompt instruction. Every change is checked by the deterministic suite (284 tests, no LLM or network) and the LLM evaluation (`eval/`, 10 cases; open issues in `eval/FINDINGS.md`).
 
 - **New data or city:** replace the dataset behind `POIRepository`, which validates every record; the index rebuilds from its fingerprint. Only the vocabulary in `recommend.py` is dataset-specific.
 - **New hard constraint** (e.g. accessibility): add it to the dataset model and `PlanConstraints`, enforce it in `constraint_violation` (shared by planner and validator), and test it before exposing it as a tool argument.
