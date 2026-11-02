@@ -179,7 +179,7 @@ def test_equivalent_phrasings_of_an_interest_give_the_same_plan(deps, interests)
     (["historical attractions"], ["history"]),
     (["art", "museums"], ["art", "museum"]),
     (["Venetian history and fortresses"], ["venetian", "history"]),
-    (["parks and gardens"], ["nature"]),
+    (["parks and gardens"], ["garden"]),
     (["Gorgon pediment"], ["Gorgon pediment"]),  # outside the vocabulary: kept for the semantic score
     (["Byzantine icons"], ["Byzantine icons"]),
 ])
@@ -211,8 +211,19 @@ def test_an_added_interest_is_kept_with_the_earlier_ones_and_can_swap_a_stop(dep
     call(s, deps, "revise_itinerary", add_interests=["gardens"])
     after = s.itinerary.poi_ids()
     assert s.preferences.interests == ["historical attractions", "gardens"]
-    assert "CF-036" in after  # Park of 25 March
+    assert any({"park", "garden", "green_space"} & set(deps.repo.get(i).tags) for i in after)
     assert {"CF-001", "CF-007"} <= set(after) and len(set(before) - set(after)) <= 2  # main stops kept, at most two swapped
+
+
+def test_a_waterfront_does_not_count_as_a_garden(deps):
+    """Seen offline for E5: with 'gardens' mapped to all of nature, Faliraki Waterfront 'covered' an added
+    interest in gardens, and no garden was added."""
+    s = SessionState()
+    call(s, deps, "plan_itinerary", date="2026-10-10", start_time="09:30", end_time="13:30", interests=["Venetian history", "views"])
+    call(s, deps, "revise_itinerary", exclude_tags=["museum"], end_time="12:30")
+    out = call(s, deps, "revise_itinerary", add_interests=["gardens"])
+    assert any({"park", "garden", "green_space"} & set(deps.repo.get(i).tags) for i in s.itinerary.poi_ids())
+    assert not any("already covered by Faliraki" in n for n in out.data["notes"])
 
 
 def test_an_added_interest_already_covered_keeps_the_plan_and_says_so(deps):
