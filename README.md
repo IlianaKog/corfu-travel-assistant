@@ -137,6 +137,8 @@ LLM_MODEL=gemini-3.1-flash-lite
      response = LLM text + itinerary table rendered by code + sources (POI ids) + weather source
 ```
 
+The diagram shows each tool's main data source. The planner tools also use the vector index for interest relevance and the weather provider for rain.
+
 ### Tools
 
 | Tool | Purpose | Changes state |
