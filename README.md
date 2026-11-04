@@ -16,9 +16,10 @@ docker compose run --rm app python -m eval.run_eval        # 10 evaluation cases
 docker compose run --rm app pytest                         # deterministic tests, no LLM key or network
 ```
 
-- **Scenarios A–E:** our run is in [`demo/transcription_final.md`](demo/transcription_final.md). Running the demo yourself writes `demo/transcript.md` and leaves ours in place.
+- **Demo recording:** [scenarios A–E in the chat UI](https://drive.google.com/drive/folders/1XhJK8DOsXEOhq63crFNeDaiKvkhFypwk?usp=sharing) (Google Drive).
+- **Scenarios A–E:** a recorded run is in [`demo/transcription_final.md`](demo/transcription_final.md). A new demo run writes `demo/transcript.md` and leaves the recorded one in place.
 - **Design note:** [`DESIGN.md`](DESIGN.md), two pages.
-- **Evaluation:** [`eval/results_final.md`](eval/results_final.md) is our final run (10/10). Running the evaluation yourself writes `eval/results.md`. [`eval/FINDINGS.md`](eval/FINDINGS.md) lists the issues still open, with causes and proposed improvements.
+- **Evaluation:** [`eval/results_final.md`](eval/results_final.md) is the final recorded run (10/10). A new evaluation run writes `eval/results.md`. [`eval/FINDINGS.md`](eval/FINDINGS.md) lists the issues still open, with causes and proposed improvements.
 
 ---
 
@@ -212,11 +213,11 @@ tests/             deterministic tests (no LLM, no network)
 eval/
   cases.py         10 evaluation cases with deterministic checks
   run_eval.py      runs the cases against the real LLM
-  results_final.md our final run (+ results_final.json, raw); a new run writes results.md
+  results_final.md final recorded run (+ results_final.json, raw); a new run writes results.md
   FINDINGS.md      open issues: what happens, cause, proposed improvement
 demo/
   run_scenarios.py executable demo of scenarios A–E (prompts verbatim from the brief)
-  transcription_final.md  our demo run; a new run writes transcript.md
+  transcription_final.md  recorded demo run; a new run writes transcript.md
 DESIGN.md          two-page design note
 Dockerfile, docker-compose.yml, .dockerignore
 requirements.txt   direct dependencies (ranges)
