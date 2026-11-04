@@ -16,7 +16,7 @@ Problems found during development and since fixed in code are not listed here. E
 
 ## 2. Time windows cannot cross midnight (E10)
 
-**What happens.** *"A night out from 21:00 to 01:00"* is not planned. `PlanConstraints` requires the end to be after the start on the same day. The model tried `end_time: "01:00"` and then a 240-minute duration, and validation rejected both. The reply explains the limitation and offers a window ending at 23:59, with no invented plan.
+**What happens.** *"A night out from 21:00 to 01:00"* is not planned. `PlanConstraints` requires the end to be after the start on the same day. The model tried `end_time: "01:00"` and then a 240-minute duration, and validation rejected both. The reply explains that the window spans two days and asks for one within a single day, or one ending before midnight, with no invented plan.
 
 **Cause.** The window is a date plus two times. The data would support the request: bars open 20:00–02:00, and `hours.py` already handles overnight opening hours.
 
@@ -40,7 +40,7 @@ Problems found during development and since fixed in code are not listed here. E
 
 ## 5. Relevance is approximate
 
-**What happens.** In E5 (*"Venetian stuff and good views"*), the first plan included the Byzantine Museum. Its relevance comes from embedding similarity to "history", not from a Venetian connection.
+**What happens.** In E5 (*"Venetian stuff and good views"*), the first plan in the final run included Casa Parlante (a nineteenth-century household) and the Palace of St. Michael and St. George (built under British rule), next to the Venetian New Fortress and its gate. An earlier run included the Byzantine Museum. Their relevance comes from tags and embedding similarity to history in general, not from a Venetian connection.
 
 **Cause.** Relevance mixes a small tag vocabulary (0.6) with embedding similarity (0.4). Short stops have near-equal scores, so the choice among them is sensitive to small differences.
 
