@@ -157,7 +157,7 @@ The diagram shows each tool's main data source. The planner tools also use the v
 | `recommend_places` | Ranks places by interests with metadata filters, open on the visit date (no itinerary) | stores preferences |
 | `get_weather` | Forecast for a date and window, or the next N hours; always labelled live or synthetic | no |
 | `plan_itinerary` | New validated plan, or a feasibility check for named places | stores plan and preferences |
-| `replace_stop` | Replaces one stop, keeping the others and their order | stores plan |
+| `replace_stop` | Replaces one stop, keeping the others and their order; the new stop takes the same position, or another where it fits | stores plan |
 | `revise_itinerary` | Applies changed constraints or an added interest with as few changes as possible | stores plan and preferences |
 | `adapt_plan_to_weather` | Fetches the forecast for the plan's window and adapts the plan to rain | stores plan |
 
@@ -248,7 +248,7 @@ In the demo, each scenario starts a new conversation and the follow-ups in B and
 - All times are `Europe/Athens` local time. A plan needs a date and a time window; if they are missing the assistant asks, and a time the visitor never wrote is shown as an assumed-time notice.
 - Walking times are estimates from coordinates, not routed times. A plan starts at the first stop; getting there is not counted.
 - Only places with confirmed fixture hours are scheduled. Unknown hours are never treated as open, and `null` family suitability is treated as not confirmed.
-- Rain means at least 0.5 mm in an hour or a WMO rain code. Outdoor and `mixed` stops are not scheduled during rain.
+- Rain means at least 0.5 mm in an hour or a WMO rain code. Outdoor and `mixed` stops are not scheduled during rain. A short walk between stops may still fall in rain; it is allowed and reported as a warning, because avoiding it would often mean dropping a stop.
 - Past dates are accepted, because the brief's scenarios are dated October 2026.
 
 ## Known limitations
@@ -260,4 +260,6 @@ In the demo, each scenario starts a new conversation and the follow-ups in B and
 - The check for query terms absent from the dataset finds missing topics (an aquarium), not missing facts about present ones. "Ticket" appears in dataset disclaimers, so a price question relies on the tool's list of facts the dataset never contains.
 - The LLM can still drop a stated fact or choose a weaker tool call. Hard constraints are enforced in code; [`eval/FINDINGS.md`](eval/FINDINGS.md) lists the issues still open.
 - Interest matching relies on English descriptions and a small tag vocabulary.
+- Only the last 40 messages, tool calls and results included, are sent to the LLM. Preferences, the plan and the checks against the visitor's own words use the full stored state, so nothing agreed earlier is lost.
+- One message may use at most 6 rounds of tool calls; after that the assistant asks the visitor to rephrase or split the request.
 - Sessions are in memory and single-process; they are lost on restart.
